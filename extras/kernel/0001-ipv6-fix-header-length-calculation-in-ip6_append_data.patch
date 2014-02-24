@@ -1,0 +1,39 @@
+Commit 299b0767 (ipv6: Fix IPsec slowpath fragmentation problem)
+has introduced a error in the header length calculation that
+provokes corrupted packets when non-fragmentable extensions
+headers (Destination Option or Routing Header Type 2) are used.
+
+rt->rt6i_nfheader_len is the length of the non-fragmentable
+extension header, and it should be substracted to
+rt->dst.header_len, and not to exthdrlen, as it was done before
+commit 299b0767.
+
+This patch reverts to the original and correct behavior. It has
+been successfully tested with and without IPsec on packets
+that include non-fragmentable extensions headers.
+
+Signed-off-by: Romain Kuntz <r.kuntz@ipflavors.com>
+---
+ net/ipv6/ip6_output.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
+index 5552d13..0c7c03d 100644
+--- a/net/ipv6/ip6_output.c
++++ b/net/ipv6/ip6_output.c
+@@ -1213,10 +1213,10 @@ int ip6_append_data(struct sock *sk, int getfrag(void *from, char *to,
+ 		if (dst_allfrag(rt->dst.path))
+ 			cork->flags |= IPCORK_ALLFRAG;
+ 		cork->length = 0;
+-		exthdrlen = (opt ? opt->opt_flen : 0) - rt->rt6i_nfheader_len;
++		exthdrlen = (opt ? opt->opt_flen : 0);
+ 		length += exthdrlen;
+ 		transhdrlen += exthdrlen;
+-		dst_exthdrlen = rt->dst.header_len;
++		dst_exthdrlen = rt->dst.header_len - rt->rt6i_nfheader_len;
+ 	} else {
+ 		rt = (struct rt6_info *)cork->dst;
+ 		fl6 = &inet->cork.fl.u.ip6;
+-- 
+1.7.2.5
+

@@ -1,0 +1,22 @@
+The kernel patches in this directory have been merged upstream and
+do not need to be applied on kernel versions >= 3.8.1
+
+If you want to use older kernels, you will need to patch them.
+You will find below the patches that must be applied according
+to the kernel version. They can be applied in any order.
+
+* Kernel 3.8 series:
+** Kernel 3.8.1 and above: no patches to apply
+** Kernel 3.8:
+   0001-xfrm-release-neighbor-upon-dst-destruction.patch
+
+* Kernel 3.7 series:
+** Kernel >= 3.7.8:
+   0001-ipv6-use-addrconf_get_prefix_route-for-prefix-route-lookup.patch
+   0001-xfrm-release-neighbor-upon-dst-destruction.patch
+** Kernel < 3.7.8:
+   0001-ipv6-fix-header-length-calculation-in-ip6_append_data.patch
+   0001-ipv6-fix-the-noflags-test-in-addrconf_get_prefix_route.patch
+   0001-ipv6-use-addrconf_get_prefix_route-for-prefix-route-lookup.patch
+   0001-xfrm-release-neighbor-upon-dst-destruction.patch
+

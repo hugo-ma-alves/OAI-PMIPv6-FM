@@ -1,0 +1,26 @@
+Neighbor is cloned in xfrm6_fill_dst but seems to never be released.
+Neighbor etry should be released when XFRM6 dst entry is destroyed
+in xfrm6_dst_destroy, otherwise references may be kept forever on
+the device pointed by the neighbor entry.
+
+Signed-off-by: Romain Kuntz <r.kuntz@ipflavors.com>
+---
+ net/ipv6/xfrm6_policy.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/net/ipv6/xfrm6_policy.c b/net/ipv6/xfrm6_policy.c
+index c984413..8f32718 100644
+--- a/net/ipv6/xfrm6_policy.c
++++ b/net/ipv6/xfrm6_policy.c
+@@ -236,6 +236,8 @@ static void xfrm6_dst_destroy(struct dst_entry *dst)
+ {
+ 	struct xfrm_dst *xdst = (struct xfrm_dst *)dst;
+ 
++	if (likely(xdst->u.rt6.n))
++		neigh_release(xdst->u.rt6.n);
+ 	if (likely(xdst->u.rt6.rt6i_idev))
+ 		in6_dev_put(xdst->u.rt6.rt6i_idev);
+ 	dst_destroy_metrics_generic(dst);
+-- 
+1.7.2.5
+
