@@ -1,3 +1,21 @@
+
+
+config.*
+.deps
+.libs
+*.tar.gz
+*.tar.bz2
+
+ylwrap
+man/*.man
+src/defpath.h
+src/gram.c
+src/gram.h
+src/pmgr.c
+src/pmgr.h
+src/scan.c
+src/mip6d
+
 # Object files
 *.o
 *.ko
@@ -22,6 +40,7 @@
 # Codeblocks
 
 *.cbp
+/*.layout
 
 ### CMake ###
 CMakeCache.txt
