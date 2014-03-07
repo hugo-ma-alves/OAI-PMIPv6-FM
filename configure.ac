@@ -126,6 +126,7 @@ if test x$ac_cv_pmip_use_radius = xyes; then
 	])
 fi
 
+
 AC_CHECK_LIB(netlink, rtnl_talk)
 AM_CONDITIONAL(LOCAL_NETLINK, test x$ac_cv_lib_netlink_rtnl_talk = xno)
 
@@ -146,12 +147,29 @@ AC_CACHE_CHECK([whether to use builtin crypto],
 	       [ac_cv_use_builtin_crypto], [ac_cv_use_builtin_crypto=no])
 AM_CONDITIONAL(BUILTIN_CRYPTO, test x$ac_cv_lib_crypto_HMAC_Init = xno)
 
+
 if test ac_cv_pmip_use_radius = xyes; then
         AC_DEFINE([USE_RADIUS], [1], [USE RADIUS AUTH])
 fi
 AC_CACHE_CHECK([whether to use RADIUS client library],
 			   [ac_cv_pmip_use_radius], [ac_cv_pmip_use_radius=no])
 AM_CONDITIONAL(USE_RADIUS, test x$ac_cv_pmip_use_radius = xyes)
+
+
+dnl Option --with-odtone
+AC_ARG_WITH(odtone,
+			AC_HELP_STRING([--with-odtone],[Use ODTONE 802.21 implementation]),
+			[ac_cv_pmip_with_odtone=yes], [ac_cv_pmip_with_odtone=no])
+
+if test x$ac_cv_pmip_with_odtone = xyes; then
+        AC_DEFINE([USE_ODTONE], [1], [USE ODTONE ])
+fi
+AC_CACHE_CHECK([whether to use ODTONE implementation of 802.21],
+			   [ac_cv_pmip_with_odtone], [ac_cv_pmip_with_odtone=no])
+AM_CONDITIONAL(USE_ODTONE, test x$ac_cv_pmip_with_odtone = xyes)
+
+
+
 
 dnl Option --disable-debug
 AC_ARG_ENABLE(debug,
@@ -260,6 +278,7 @@ AC_PACKAGE_NAME version AC_PACKAGE_VERSION
   Use RADIUS client library: ...... $ac_cv_pmip_use_radius
   Enable debugging mode: .......... $ac_cv_enable_debug
   Enable virtual debug terminal: .. $ac_cv_enable_vt
+  Use ODTONE 802_21 to detect clients: .. $ac_cv_pmip_with_odtone
 
   Build target: $host
   CPPFLAGS: $CPPFLAGS

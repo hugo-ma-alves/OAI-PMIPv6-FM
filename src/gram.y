@@ -114,19 +114,21 @@ static void uerror(const char *fmt, ...) {
 %union {
 	char *string;
 	struct in6_addr addr;
-	struct in6_addr macaddr;
+	struct in_addr ipaddr;
+	struct in6_addr macaddr; //for saving the macaddr in 128bit
 	char bool;
 	unsigned int num;
 	unsigned int numpair[2];
 	double dec;
 }
 
-%token <string> QSTRING
-%token <addr>	ADDR
+%token <string> 	QSTRING
+%token <addr>		ADDR
+%token <ipaddr> 	IPADDR
 %token <macaddr>	MACADDR
-%token <bool>	BOOL
-%token <num>	NUMBER
-%token <dec>	DECIMAL
+%token <bool>		BOOL
+%token <num>		NUMBER
+%token <dec>		DECIMAL
 %token <numpair>	NUMPAIR;
 
 %token		MIP6ENTITY
@@ -238,6 +240,11 @@ static void uerror(const char *fmt, ...) {
 %token		RADIUSCLIENTCONFIGFILE
 %token		PCAPSYSLOGASSOCIATIONGREPSTRING
 %token		PCAPSYSLOGDEASSOCIATIONGREPSTRING
+%token 		LINKMACADDRESS
+%token 		MIHFIPADDRESS
+%token 		MIHFCLIENTUSERNAME
+%token 		MIHFID
+%token 		MIHFPORT
 
 %token		INV_TOKEN
 
@@ -248,6 +255,7 @@ static void uerror(const char *fmt, ...) {
 %type <numpair>	ipsecreqid
 
 %type <addr>	mnropolicyaddr
+
 %type <bool>	dorouteopt
 %type <num>	bindaclpolval
 %type <num>	prefixlen
@@ -1134,6 +1142,36 @@ proxymipmagopt	: LMAPMIPNETWORKADDRESS ADDR ';'
 		| PCAPSYSLOGDEASSOCIATIONGREPSTRING QSTRING ';'
 		{
 			conf_parsed->PcapSyslogDeAssociationGrepString = $2;
+		}
+		| LINKMACADDRESS MACADDR ';'
+		{	
+			//The mac address is saved in a inet6_structure with 128 bits
+			//need to convert to a 6 bytes representation
+			conf_parsed->LinkMacAddress[0]= $2.s6_addr[10];
+			conf_parsed->LinkMacAddress[1]= $2.s6_addr[11];
+			conf_parsed->LinkMacAddress[2]= $2.s6_addr[12];
+			conf_parsed->LinkMacAddress[3]= $2.s6_addr[13];
+			conf_parsed->LinkMacAddress[4]= $2.s6_addr[14];
+			conf_parsed->LinkMacAddress[5]= $2.s6_addr[15];
+
+			//memcpy(&conf_parsed->LinkMacAddress, &$2, sizeof(struct in6_addr));
+
+		}
+		| MIHFIPADDRESS IPADDR ';'
+		{
+			memcpy(&conf_parsed->MIHFIPAddress, &$2, sizeof(struct in_addr));
+		}
+		| MIHFCLIENTUSERNAME QSTRING ';'
+		{
+			conf_parsed->MIHFClientUserName = $2;
+		}
+		| MIHFID QSTRING ';'
+		{
+			conf_parsed->MIHF_ID = $2;
+		}
+		| MIHFPORT NUMBER ';'
+		{
+			conf_parsed->MIHFPort = $2;
 		}
 		;
 %%

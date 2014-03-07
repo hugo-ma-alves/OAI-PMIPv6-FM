@@ -94,11 +94,14 @@ addr1		{hexdec}{1,4}":"({hexdec}{1,4}":")*(":"{hexdec}{1,4})+
 addr2		{hexdec}{1,4}(":"{hexdec}{1,4}){0,6}"::"
 addr3		({hexdec}{1,4}":"){7}{hexdec}{1,4}
 addr		({addr1}|{addr2}|{addr3}|"::")
+ipaddr		({number}"."{number}"."{number}"."{number})
 macaddr1	({hexdec}{1,2}":"){5}{hexdec}{1,2}
 macaddr2	({hexdec}{1,2}":"{hexdec}{1,2}":"{hexdec}{1,2}":"{hexdec}{1,2}":"{hexdec}{1,2}":"{hexdec}{1,2})
 macaddr		({macaddr1}|{macaddr2})
+macaddr48   ({macaddr1})
 true		(enabled|allow|true)
 false		(disabled|deny|block|false)
+
 %%
 
 include		BEGIN(in_include);
@@ -334,6 +337,11 @@ RadiusClientConfigFile		{ return RADIUSCLIENTCONFIGFILE; }
 PcapSyslogAssociationGrepString	{ return PCAPSYSLOGASSOCIATIONGREPSTRING; }
 PcapSyslogDeAssociationGrepString	{ return PCAPSYSLOGDEASSOCIATIONGREPSTRING; }
 internal			{ return INTERNAL; }
+LinkMacAddress			{ return LINKMACADDRESS; }
+MIHFIPAddress			{ return MIHFIPADDRESS; }
+MIHFClientUserName		{ return MIHFCLIENTUSERNAME; }
+MIHF_ID				{ return MIHFID; }
+MIHFPort			{return MIHFPORT; }
 
 {addr}		{
 			int i;
@@ -345,6 +353,9 @@ internal			{ return INTERNAL; }
 			}
 			return ADDR;
 		}
+
+
+
 
 {macaddr}	{
 			unsigned int i;
@@ -388,6 +399,7 @@ internal			{ return INTERNAL; }
 			return MACADDR;
 		}
 
+
 {number}	{ yylval.num = atoi(yytext); return NUMBER; }
 
 {decimal}	{ yylval.dec = atof(yytext); return DECIMAL; }
@@ -395,6 +407,19 @@ internal			{ return INTERNAL; }
 {true}  	{ yylval.bool = 1; return BOOL; }
 
 {false} 	{ yylval.bool = 0; return BOOL; }
+
+{ipaddr}	{ 
+				unsigned long i;
+				
+				i = inet_pton(AF_INET, yytext, &yylval.ipaddr);
+
+				if (i < 1) {
+					return INV_TOKEN;
+				}
+				return IPADDR;
+				 }
+
+				 
 
 "{"|"}"|";"|"/"|"="|"("|")"|","	{ return *yytext; }
 

@@ -8,6 +8,7 @@
 #include "list.h"
 #include "pmgr.h"
 
+
 struct mip6_config {
 	/* Common options */
 	char *config_file;
@@ -102,6 +103,15 @@ struct mip6_config {
 	char*           RadiusPassword;
 	char*           PcapSyslogAssociationGrepString;
 	char*           PcapSyslogDeAssociationGrepString;
+
+	/* ODtone specific Options*/
+	 char  LinkMacAddress[6];
+	struct in_addr MIHFIPAddress;
+	 char* MIHFClientUserName;
+	 char* MIHF_ID;
+	 uint16_t MIHFPort;
+
+
 };
 
 struct net_iface {
