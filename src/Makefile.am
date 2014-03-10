@@ -80,7 +80,7 @@ mip6d_SOURCES += vt.c vt.h
 endif
 
 if USE_ODTONE
-mip6d_SOURCES += /pmip/pmip_odtone.h /pmip/pmip_odtone.c
+mip6d_SOURCES += ./pmip/pmip_odtone.h ./pmip/pmip_odtone.c
 endif
 
 if BUILTIN_CRYPTO
