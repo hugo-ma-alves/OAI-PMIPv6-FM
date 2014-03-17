@@ -4,17 +4,17 @@
  * Authors: OPENAIR3 <openair_tech@eurecom.fr>
  *
  * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ *
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility
+ * management protocol standardized by IETF. It is a protocol for building
+ * a common and access technology independent of mobile core networks,
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only
  * network-based mobility management protocol standardized by IETF.
- * 
+ *
  * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
  * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
+ * License version 2. See MIPL terms condition if you need more details.
  */
 /*! \file pmip6d.c
 * \brief The main PMIP6D file
@@ -53,6 +53,11 @@
 #include "debug.h"
 #include "conf.h"
 
+//-------------------------------------------------------------------------------------------------------------------------
+#ifdef USE_ODTONE
+#   include "pmip_odtone.h"
+#endif
+
 #define IPV6_ALL_SOLICITED_MCAST_ADDR 68
 //---------------------------------------------------------------------------------------------------------------------
 extern struct sock icmp6_sock;
@@ -60,10 +65,12 @@ extern struct sock icmp6_sock;
 void init_mag_icmp_sock(void)
 //---------------------------------------------------------------------------------------------------------------------
 {
-    if (0) {
+    if (0)
+    {
         int on = 1;
         dbg("Set SOLRAW, IPV6_ALL_SOLICTED_MCAST_ADDR = %d\n", IPV6_ALL_SOLICITED_MCAST_ADDR);
-        if (setsockopt(icmp6_sock.fd, SOL_RAW, IPV6_ALL_SOLICITED_MCAST_ADDR, &on, sizeof(on)) < 0) {
+        if (setsockopt(icmp6_sock.fd, SOL_RAW, IPV6_ALL_SOLICITED_MCAST_ADDR, &on, sizeof(on)) < 0)
+        {
             perror("allow all solicited mcast address\n");
         }
     }
@@ -73,19 +80,22 @@ static int pmip_cache_delete_each(void *data, __attribute__ ((unused)) void *arg
 //---------------------------------------------------------------------------------------------------------------------
 {
     pmip_entry_t *bce = (pmip_entry_t *) data;
-    if (is_mag()) {
+    if (is_mag())
+    {
         //Delete existing route & rule for the deleted MN
         mag_remove_route(&bce->mn_addr, bce->link);
         int usercount = tunnel_getusers(bce->tunnel);
         dbg("# of binding entries %d \n", usercount);
-        if (usercount == 1) {
+        if (usercount == 1)
+        {
             route_del(bce->tunnel, RT6_TABLE_PMIP, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, &in6addr_any, 0, NULL);
         }
         //decrement users of old tunnel.
         pmip_tunnel_del(bce->tunnel);
     }
     //Delete existing route for the deleted MN
-    if (is_ha()) {
+    if (is_ha())
+    {
         lma_remove_route(&bce->mn_addr, bce->tunnel);
         //decrement users of old tunnel.
         pmip_tunnel_del(bce->tunnel);
@@ -108,8 +118,11 @@ void pmip_cleanup(void)
     dbg("Release pmip_cache...\n");
     pmip_cache_iterate(pmip_cache_delete_each, NULL);
 
-    if (is_mag()) {
+    if (is_mag())
+    {
+#ifndef USE_802_21
         pmip_pcap_loop_stop();
+#endif
     }
     dbg("pmip_cleanup end\n");
 }
@@ -120,9 +133,10 @@ int pmip_common_init(void)
 {
     /**
     * Probe for the local address
-	**/
+    **/
     int probe_fd = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (probe_fd < 0) {
+    if (probe_fd < 0)
+    {
         perror("socket");
         exit(2);
     }
@@ -133,12 +147,14 @@ int pmip_common_init(void)
     memset(&firsthop, 0, sizeof(firsthop));
     firsthop.sin6_port = htons(1025);
     firsthop.sin6_family = AF_INET6;
-    if (connect(probe_fd, (struct sockaddr *) &firsthop, sizeof(firsthop)) == -1) {
+    if (connect(probe_fd, (struct sockaddr *) &firsthop, sizeof(firsthop)) == -1)
+    {
         perror("connect");
         return -1;;
     }
     alen = sizeof(host);
-    if (getsockname(probe_fd, (struct sockaddr *) &host, &alen) == -1) {
+    if (getsockname(probe_fd, (struct sockaddr *) &host, &alen) == -1)
+    {
         perror("probe getsockname");
         return -1;;
     }
@@ -148,10 +164,13 @@ int pmip_common_init(void)
     /**
     * Initializes PMIP cache.
     **/
-    if (pmip_cache_init() < 0) {
+    if (pmip_cache_init() < 0)
+    {
         dbg("PMIP Binding Cache initialization failed! \n");
         return -1;
-    } else {
+    }
+    else
+    {
         dbg("PMIP Binding Cache is initialized!\n");
     }
     return 0;
@@ -165,7 +184,8 @@ int pmip_mag_init(void)
      * Adds a default rule for RT6_TABLE_MIP6.
      */
     dbg("Add default rule for RT6_TABLE_MIP6\n");
-    if (rule_add(NULL, RT6_TABLE_MIP6, IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST, &in6addr_any, 0, &in6addr_any, 0, 0) < 0) {
+    if (rule_add(NULL, RT6_TABLE_MIP6, IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST, &in6addr_any, 0, &in6addr_any, 0, 0) < 0)
+    {
         dbg("Add default rule for RT6_TABLE_MIP6 failed, insufficient privilege/kernel options missing!\n");
         return -1;
     }
@@ -173,10 +193,13 @@ int pmip_mag_init(void)
     /**
      * Initialize timers of tunnels (tunnels between LMA and MAGs).
      */
-    if (pmip_tunnels_init() < 0) {
+    if (pmip_tunnels_init() < 0)
+    {
         dbg("PMIP Tunnels initialization failed! \n");
         return -1;
-    } else {
+    }
+    else
+    {
         dbg("PMIP Tunnels are initialized!\n");
     }
 
@@ -191,7 +214,9 @@ int pmip_mag_init(void)
     dbg("Entity Egress Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.OurAddress));
     dbg("Entity Ingress Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.MagAddressIngress[0]));
     dbg("Home Network Prefix Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.HomeNetworkPrefix));
-    if (mag_init_fsm() < 0) {
+
+    if (mag_init_fsm() < 0)
+    {
         dbg("Initialization of FSM failed...exit\n");
         exit(-1);
     }
@@ -200,12 +225,15 @@ int pmip_mag_init(void)
 
     init_iface_ra();
     init_mag_icmp_sock();
+
+#ifndef USE_ODTONE
     dbg("Initializing the NA handler\n");
     // to capture NA message
     icmp6_handler_reg(ND_NEIGHBOR_ADVERT, &pmip_mag_recv_na_handler);
     dbg("Initializing the RS handler\n");
     // to capture RS message
     icmp6_handler_reg(ND_ROUTER_SOLICIT, &pmip_mag_rs_handler);
+#endif
     dbg("Initializing the PBA handler\n");
     //To capture PBA message.
     mh_handler_reg(IP6_MH_TYPE_BACK, &pmip_mag_pba_handler);
@@ -215,12 +243,20 @@ int pmip_mag_init(void)
     **/
     //route_del((int) NULL, RT6_TABLE_MAIN, IP6_RT_PRIO_ADDRCONF, &in6addr_any, 0, &conf.HomeNetworkPrefix, 64, NULL);
     dbg("Initializing the HNP cache\n");
-    if (pmip_mn_to_hnp_cache_init() < 0) {
+    if (pmip_mn_to_hnp_cache_init() < 0)
+    {
         exit (-1);
     }
 
+
+#ifdef USE_ODTONE
+    dbg("Using Odtone to detect MNs \n");
+    start_odtone_listener();
+#else
+    dbg("Using PCAP with RSOl and SYSLOG to detect MNs \n");
     dbg("Starting capturing AP messages for incoming MNs detection\n");
     pmip_pcap_loop_start();
+#endif
     return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -232,10 +268,13 @@ int pmip_lma_init(void)
     /**
      * Initialize timers of tunnels (tunnels between LMA and MAGs).
      */
-    if (pmip_tunnels_init() < 0) {
+    if (pmip_tunnels_init() < 0)
+    {
         dbg("PMIP Tunnels initialization failed! \n");
         return -1;
-    } else {
+    }
+    else
+    {
         dbg("PMIP Tunnels are initialized!\n");
     }
 

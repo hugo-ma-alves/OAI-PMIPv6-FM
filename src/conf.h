@@ -105,7 +105,7 @@ struct mip6_config {
 	char*           PcapSyslogDeAssociationGrepString;
 
 	/* ODtone specific Options*/
-	 char  LinkMacAddress[6];
+	 unsigned char  LinkMacAddress[6];
 	struct in_addr MIHFIPAddress;
 	 char* MIHFClientUserName;
 	 char* MIHF_ID;
