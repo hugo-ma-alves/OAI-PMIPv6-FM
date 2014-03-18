@@ -340,7 +340,7 @@ int send_event_subscribe_request(void)
     msgToBuild->MIHF_Link_ID.Type = TLV_LINK_TUPLE_ID;
     msgToBuild->MIHF_Link_ID.Length = sizeof(MIH_C_Link_ID)-2;
     //msgToBuild->MIHF_Link_ID.LinkType = 0x0f;
-     //careful with this value, The correct is to extract it from the cap discovery message
+     //careful with this value, The correct is to extract it from the Re discovery message
      //Big problems can happen if the link type is not correct!!!LINK_TYPE_802_11
     //msgToBuild->MIHF_Link_ID.LinkType = 0x13;
     msgToBuild->MIHF_Link_ID.LinkType = LINK_TYPE_802_11;

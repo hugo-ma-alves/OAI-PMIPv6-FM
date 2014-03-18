@@ -120,7 +120,7 @@ void pmip_cleanup(void)
 
     if (is_mag())
     {
-#ifndef USE_802_21
+#ifndef USE_ODTONE
         pmip_pcap_loop_stop();
 #endif
     }
