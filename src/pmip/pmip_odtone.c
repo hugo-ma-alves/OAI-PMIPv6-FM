@@ -202,7 +202,7 @@ int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
     while(i<payload_length)
     {
 
-        if(str[i] != TLV_NEW_ACCESS_ROUTER || str[i]!= TLV_OLD_ACCESS_ROUTER)
+        if(str[i] != TLV_NEW_ACCESS_ROUTER && str[i]!= TLV_OLD_ACCESS_ROUTER)
         {
             dbg("Discarding TLV FIELD of type %d \n", str[i]);
             //It's not the interfaces list
