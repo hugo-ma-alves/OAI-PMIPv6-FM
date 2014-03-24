@@ -127,7 +127,6 @@ typedef struct MIH_C_User_Register_Request{
 	MIH_C_Header Header;
 	MIH_C_Mihf_ID_User User_Source;
 	MIH_C_Mihf_ID_Mihf MIHF_Destination;
-    unsigned char teste[6];
 }__attribute__((__packed__))MIH_C_User_Register_Request;
 
 

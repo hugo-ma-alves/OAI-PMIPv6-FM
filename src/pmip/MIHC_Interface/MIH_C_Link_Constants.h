@@ -49,8 +49,11 @@ mRALlte Constants
 // Event unsubscribe confirm
 #define MIH_LINK_HEADER_3_Evt_Unsub_Conf 4101	// 10 05 (1 0 5)
 
+// Event Service Indication Link UP
+#define MIH_SERVICE_INDICATION_LINK_UP 	11266	// 2c 02 ()
 
-
+// Event Service Indication Link Down
+#define MIH_SERVICE_INDICATION_LINK_DOWN 	11267	// 2c 03 ()
 
 /******************
  * MID parameters
@@ -103,6 +106,8 @@ mRALlte Constants
 #define TLV_TRANSPORT_OPTION_LIST 9
 #define TLV_ADDR_LIST 9
 #define TLV_LINK_TUPLE_ID 13
+#define TLV_NEW_ACCESS_ROUTER 16
+#define TLV_OLD_ACCESS_ROUTER 15
 #define TLV_LINK_DOWN_REASON_CODE 20
 #define TLV_LINK_TIME_INTERVAL 21
 #define TLV_LINK_GOING_DOWN_REASON 22

@@ -1,5 +1,5 @@
 #define PMIP
-#define PMIP_PCAP_C
+
 #ifdef HAVE_CONFIG_H
 #       include <config.h>
 #endif
@@ -8,9 +8,6 @@
 //---------------------------------------------------------------------------------------------------------------------
 #include "pmip_fsm.h"
 #include "pmip_hnp_cache.h"
-#include "pmip_pcap.h"
-#include "pmip_msgs.h"
-#include "pmip_mag_proc.h"
 //---------------------------------------------------------------------------------------------------------------------
 #ifdef ENABLE_VT
 #    include "vt.h"
@@ -19,6 +16,7 @@
 #include "debug.h"
 #include "conf.h"
 
+#include "pmip_odtone.h"
 
 #include "MIHC_Interface/MIH_C_Link_Primitives.h"
 
@@ -28,7 +26,6 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
 #include <stdlib.h>
 
 
@@ -41,11 +38,51 @@ socklen_t sockaddr_len;
 u_int16_t transaction_id;
 
 
+
+int start_odtone_listener(void)
+{
+
+    dbg("Getting ingress informations\n");
+    mag_get_ingress_info(&g_pcap_iif, g_pcap_devname);
+
+    int res=0;
+    srand(time(NULL));
+    transaction_id  = rand();
+
+    res=start_MIHF_socket();
+
+    if(res <0)
+    {
+        dbg("Error opening socket to MIHF");
+        return res;
+    }
+
+    res =pthread_create(&socket_listener, NULL, process_incoming_message, NULL);
+
+    if(res<0)
+    {
+        dbg ("Error starting thread that listens that waits for MIHF messages\n");
+        return res;
+    }
+
+    res=send_user_reg_indication();
+
+    if(res<0)
+    {
+        dbg ("error sending user registration to MIHF\n");
+        return res;
+    }
+
+    transaction_id  = rand();
+    send_capability_discover_request();
+    return res;
+
+}
+
+
 //---------------------------------------------------------------------------
 int start_MIHF_socket(void)
 {
-    //---------------------------------------------------------------------------
-
     sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     dbg ("\n###########Opening UDP socket to MIHF ###############\n");
@@ -61,9 +98,9 @@ int start_MIHF_socket(void)
     return sock;
 }
 
+//---------------------------------------------------------------------------
 int send_to_mih(char * str, int prim_length)
 {
-    //---------------------------------------------------------------------------
     int rc;
 
     rc =sendto(sock, str,prim_length, 0, (struct sockaddr *)&mihf_socket, sockaddr_len);
@@ -72,11 +109,7 @@ int send_to_mih(char * str, int prim_length)
 }
 
 
-
-/**
-*Check if the link mac address present in the config file is present in the avaialable links list received
-*/
-int decodeLinkList(char*str, int index)
+int configured_ap_matches_received_ap(char*str, int index)
 {
 
     unsigned char  mac[6];
@@ -140,7 +173,7 @@ int decode_capability_discover_response(char* str)
         else
         {
             dbg("Found link address list\n");
-            return decodeLinkList(str,i);
+            return configured_ap_matches_received_ap(str,i);
             break;
         }
 
@@ -150,18 +183,64 @@ int decode_capability_discover_response(char* str)
     return -1;
 }
 
+int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
+{
+    int i=0;
+    uint16_t payload_length=0;
+    uint8_t addressSize=0;
 
+    dbg("Decoding Link event indication\n");
+    dbg("The package HEX DUMP, for debugging purposes:\n");
+    debug_print_buffer(str,MIHLink_MAX_LENGTH,"decode_link_event_indication","MAC found");
+
+    payload_length=  str[6]<<8 | str[7]; //Advance to header payload length
+    i=sizeof(MIH_C_Header);// start in first TLV
+
+    dbg("Payload length size %d \n",payload_length);
+    dbg("Header size %d \n",i);
+
+    while(i<payload_length)
+    {
+
+        if(str[i] != TLV_NEW_ACCESS_ROUTER || str[i]!= TLV_OLD_ACCESS_ROUTER)
+        {
+            dbg("Discarding TLV FIELD of type %d \n", str[i]);
+            //It's not the interfaces list
+            i++; //Lenght
+            i+= str[i]; //advance length
+            i++; //advance to next TLV Type
+        }
+        else
+        {
+            dbg("Found link address from an event\n");
+            ++i; // TLV length
+            ++i;// Link Address type, assuming MAC 48
+            i+=2; // Link Address type,
+            ++i; //address size
+            addressSize= str[i];
+            *mobileNode_mac = malloc(sizeof(unsigned char)*addressSize);
+            ++i;// first byte of mac address
+            memcpy(*mobileNode_mac,str, addressSize);
+            return addressSize;
+        }
+
+    }
+
+    dbg("Error parsing Link event subscription");
+    return -1;
+}
 
 //-----------------------------------------------------------------------------
 // Process incoming messages from MIHF
 int process_incoming_message(void)
 {
-    //-----------------------------------------------------------------------------
 
     dbg("Starting incoming MIHF messages listener....\n");
 
     int n=0;
     char str[MIHLink_MAX_LENGTH];
+    int addrSize;
+    unsigned char  * macaddress;
 
     while(1)
     {
@@ -169,7 +248,6 @@ int process_incoming_message(void)
         MIH_C_Header *ODTONE_Header;
 
         bzero(str,MIHLink_MAX_LENGTH);
-
 
         n = recvfrom(sock, (void *)str, MIHLink_MAX_LENGTH, 0, (struct sockaddr *) &mihf_socket, &sockaddr_len);
 
@@ -189,6 +267,20 @@ int process_incoming_message(void)
         case MIH_LINK_HEADER_3_Evt_Sub_Conf:
             dbg("Received Event subscribe response, but it isn't parsed\n");
             break;
+        case MIH_SERVICE_INDICATION_LINK_UP:
+            dbg("Received Link UP Indication\n");
+             addrSize = decode_link_event_indication(str, &macaddress);
+            debug_print_buffer(macaddress ,addrSize, "Received LINK UP FROM"," LINK UP");
+            msg_handler_associate(macaddress);
+            free(macaddress);
+            break;
+        case MIH_SERVICE_INDICATION_LINK_DOWN:
+            dbg("Received Link DOWN Indication\n");
+             addrSize = decode_link_event_indication(str, &macaddress);
+            debug_print_buffer(macaddress ,addrSize, "Received LINK DOWN FROM"," LINK DOWN");
+            msg_handler_deassociate(macaddress);
+            free(macaddress);
+            break;
         default:
             dbg("Unknow type of message received from MIHF\n");
             break;
@@ -196,7 +288,7 @@ int process_incoming_message(void)
 
     }
 
-    return n;
+    return 0;
 }
 
 
@@ -204,7 +296,6 @@ int process_incoming_message(void)
 //---------------------------------------------------------------------------
 int send_user_reg_indication(void)
 {
-    //---------------------------------------------------------------------------
 
     int res=0;
     char str[MIHLink_MAX_LENGTH];
@@ -237,8 +328,6 @@ int send_user_reg_indication(void)
     msgToBuild->MIHF_Destination.Link_ID_Name_Mihf.Length= sizeof(MIH_C_Link_ID_Name_Mihf)-1;
     strcpy(msgToBuild->MIHF_Destination.Link_ID_Name_Mihf.Link_ID_Char, conf.MIHF_ID);
 
-    unsigned char command[6]  = {0x06,0x04,0x00,0x00,0x00,0x18};
-    memcpy(msgToBuild->teste,command,6);
 
     res=send_to_mih(str,prim_length);
     if (res<0)
@@ -253,7 +342,6 @@ int send_user_reg_indication(void)
 //---------------------------------------------------------------------------
 int send_capability_discover_request(void)
 {
-    //---------------------------------------------------------------------------
 
     int res=0;
     char str[MIHLink_MAX_LENGTH];
@@ -298,7 +386,6 @@ int send_capability_discover_request(void)
 //---------------------------------------------------------------------------
 int send_event_subscribe_request(void)
 {
-    //---------------------------------------------------------------------------
 
     int res=0;
     int i=0;
@@ -340,8 +427,8 @@ int send_event_subscribe_request(void)
     msgToBuild->MIHF_Link_ID.Type = TLV_LINK_TUPLE_ID;
     msgToBuild->MIHF_Link_ID.Length = sizeof(MIH_C_Link_ID)-2;
     //msgToBuild->MIHF_Link_ID.LinkType = 0x0f;
-     //careful with this value, The correct is to extract it from the Re discovery message
-     //Big problems can happen if the link type is not correct!!!LINK_TYPE_802_11
+    //careful with this value, The correct is to extract it from the Re discovery message
+    //Big problems can happen if the link type is not correct!!!LINK_TYPE_802_11
     //msgToBuild->MIHF_Link_ID.LinkType = 0x13;
     msgToBuild->MIHF_Link_ID.LinkType = LINK_TYPE_802_11;
     msgToBuild->MIHF_Link_ID.AddressFamily = 0x00;
@@ -350,26 +437,20 @@ int send_event_subscribe_request(void)
     memcpy( msgToBuild->MIHF_Link_ID.MAC_Address.MAC_Addr_Val, mac_address, sizeof(mac_address));
     msgToBuild->MIHF_Link_ID.Padding=0x00;
 
-
     //EVENTS LIST
-
-           // load the event for Event Subscribe Confirm
+    // load the event for Event Subscribe Confirm
     // each bit corresponding to an event is set to 1
     evt_list = evt_list | EVT_LIST_LINK_DETECTED;
     evt_list = evt_list | EVT_LIST_LINK_UP;
     evt_list = evt_list | EVT_LIST_LINK_DOWN;
-   // evt_list = evt_list | EVT_LIST_LINK_GOING_DOWN;
-   // evt_list = evt_list | EVT_LIST_LINK_PARAMETERS_REPORT;
-
-    u_int8_t event_list[MIHF_EVT_LIST_LENGTH]= {0x00,0x00,0x00,0x7f};
+    // evt_list = evt_list | EVT_LIST_LINK_GOING_DOWN;
+    // evt_list = evt_list | EVT_LIST_LINK_PARAMETERS_REPORT;
 
     msgToBuild->MIHF_Event_List.Type = TLV_EVENT_LIST;
     msgToBuild->MIHF_Event_List.Length = sizeof(MIH_C_MIHF_Evt_List)-2;
-   memcpy( msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct, event_list, sizeof(event_list));
 
-    //msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[3] = evt_list;
-  // for(i=0;i<3;i++){msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[i] = VALUE_NULL;}
-
+    msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[3] = evt_list;
+    for(i=0;i<3;i++){msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[i] = VALUE_NULL;}
 
     res=send_to_mih(str,prim_length);
     if (res<0)
@@ -383,41 +464,31 @@ int send_event_subscribe_request(void)
 }
 
 
-int start_odtone_listener(void)
+void msg_handler_associate(unsigned char * mn_iidP)
 {
-
-    int res;
-    srand(time(NULL));
-    transaction_id  = rand();
-
-    res=start_MIHF_socket();
-
-    if(res <0)
-    {
-        dbg("Error opening socket to MIHF");
-        return res;
-    }
-
-    res =pthread_create(&socket_listener, NULL, process_incoming_message, NULL);
-
-    if(res<0)
-    {
-        dbg ("Error starting thread that listens that waits for MIHF messages\n");
-        return res;
-    }
-
-    res=send_user_reg_indication();
-
-    if(res<0)
-    {
-        dbg ("error sending user registration to MIHF\n");
-        return res;
-    }
-
-    transaction_id  = rand();
-    send_capability_discover_request();
-    return res;
-
+    dbg("Sending message to mag finite state machine\n");
+    struct in6_addr macAddress48;
+    memset(&macAddress48, 0, sizeof(struct in6_addr));
+    memcpy( &macAddress48.s6_addr[10],mn_iidP,6);
+    msg_info_t msg;
+    memset(&msg, 0, sizeof(msg_info_t));
+    msg.mn_iid = EUI48_to_EUI64(macAddress48);
+    msg.iif = g_pcap_iif;
+    msg.msg_event = hasWLCCP;
+    mag_fsm(&msg);
 }
 
+void msg_handler_deassociate(unsigned char * mn_iidP)
+{
+    dbg("Sending message to mag finite state machine\n");
+    struct in6_addr macAddress48;
+    memset(&macAddress48, 0, sizeof(struct in6_addr));
+    memcpy( &macAddress48.s6_addr[10],mn_iidP,6);
+    msg_info_t msg;
+    memset(&msg, 0, sizeof(msg_info_t));
+    msg.mn_iid = EUI48_to_EUI64(macAddress48);
+    msg.iif = g_pcap_iif;
+    msg.msg_event = hasDEREG;
+    mag_fsm(&msg);
+}
 
