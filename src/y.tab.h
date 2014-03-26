@@ -1,0 +1,326 @@
+/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
+
+/* Bison interface for Yacc-like parsers in C
+   
+      Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+/* As a special exception, you may create a larger work that contains
+   part or all of the Bison parser skeleton and distribute that work
+   under terms of your choice, so long as that work isn't itself a
+   parser generator using the skeleton or a modified version thereof
+   as a parser skeleton.  Alternatively, if you modify or redistribute
+   the parser skeleton itself, you may (at your option) remove this
+   special exception, which will cause the skeleton and the resulting
+   Bison output files to be licensed under the GNU General Public
+   License without this special exception.
+   
+   This special exception was added by the Free Software Foundation in
+   version 2.2 of Bison.  */
+
+#ifndef YY_YY_Y_TAB_H_INCLUDED
+# define YY_YY_Y_TAB_H_INCLUDED
+/* Enabling traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
+
+/* Tokens.  */
+#ifndef YYTOKENTYPE
+# define YYTOKENTYPE
+   /* Put the tokens into the symbol table, so that GDB and other debuggers
+      know about them.  */
+   enum yytokentype {
+     QSTRING = 258,
+     ADDR = 259,
+     MACADDR = 260,
+     BOOL = 261,
+     NUMBER = 262,
+     DECIMAL = 263,
+     NUMPAIR = 264,
+     MIP6ENTITY = 265,
+     DEBUGLEVEL = 266,
+     DEBUGLOGFILE = 267,
+     DOROUTEOPTIMIZATIONCN = 268,
+     DOROUTEOPTIMIZATIONMN = 269,
+     HOMEADDRESS = 270,
+     HOMEAGENTADDRESS = 271,
+     INITIALBINDACKTIMEOUTFIRSTREG = 272,
+     INITIALBINDACKTIMEOUTREREG = 273,
+     INITIALSOLICITTIMER = 274,
+     INTERFACEINITIALINITDELAY = 275,
+     LINKNAME = 276,
+     HAMAXBINDINGLIFE = 277,
+     MNMAXHABINDINGLIFE = 278,
+     MNMAXCNBINDINGLIFE = 279,
+     MAXMOBPFXADVINTERVAL = 280,
+     MINMOBPFXADVINTERVAL = 281,
+     MNHOMELINK = 282,
+     HAHOMELINK = 283,
+     NONVOLATILEBINDINGCACHE = 284,
+     SENDMOBPFXSOLS = 285,
+     SENDUNSOLMOBPFXADVS = 286,
+     SENDMOBPFXADVS = 287,
+     IPSECPOLICYSET = 288,
+     IPSECPOLICY = 289,
+     IPSECTYPE = 290,
+     USEALTCOA = 291,
+     USEESP = 292,
+     USEAH = 293,
+     USEIPCOMP = 294,
+     BLOCK = 295,
+     USEMNHAIPSEC = 296,
+     KEYMNGMOBCAPABILITY = 297,
+     HOMEREGBINDING = 298,
+     MH = 299,
+     MOBPFXDISC = 300,
+     TUNNELHOMETESTING = 301,
+     TUNNELMH = 302,
+     TUNNELPAYLOAD = 303,
+     USEMOVEMENTMODULE = 304,
+     USEPOLICYMODULE = 305,
+     MIP6CN = 306,
+     MIP6MN = 307,
+     MIP6HA = 308,
+     INTERNAL = 309,
+     MNROPOLICY = 310,
+     ICMP = 311,
+     ANY = 312,
+     DOROUTEOPT = 313,
+     DEFAULTBINDINGACLPOLICY = 314,
+     BINDINGACLPOLICY = 315,
+     MNADDRESS = 316,
+     USECNBUACK = 317,
+     INTERFACE = 318,
+     IFNAME = 319,
+     IFTYPE = 320,
+     MNIFPREFERENCE = 321,
+     ISTUNNEL = 322,
+     MNUSEALLINTERFACES = 323,
+     MNROUTERPROBES = 324,
+     MNROUTERPROBETIMEOUT = 325,
+     MNDISCARDHAPARAMPROB = 326,
+     MNRESETDHAADATHOME = 327,
+     MNFLUSHALLATHOME = 328,
+     MNMAXHACONSECUTIVERESENDS = 329,
+     MNMAXCNCONSECUTIVERESENDS = 330,
+     OPTIMISTICHANDOFF = 331,
+     NOHOMERETURN = 332,
+     HOMEPREFIX = 333,
+     HAACCEPTMOBRTR = 334,
+     ISMOBRTR = 335,
+     HASERVEDPREFIX = 336,
+     MOBRTRUSEEXPLICITMODE = 337,
+     CNBINDINGPOLICYSET = 338,
+     RFC5213TIMESTAMPBASEDAPPROACHINUSE = 339,
+     RFC5213MOBILENODEGENERATEDTIMESTAMPINUSE = 340,
+     RFC5213FIXEDMAGLINKLOCALADDRESSONALLACCESSLINKS = 341,
+     RFC5213FIXEDMAGLINKLAYERADDRESSONALLACCESSLINKS = 342,
+     RFC5213MINDELAYBEFOREBCEDELETE = 343,
+     RFC5213MAXDELAYBEFORENEWBCEASSIGN = 344,
+     RFC5213TIMESTAMPVALIDITYWINDOW = 345,
+     RFC5213ENABLEMAGLOCALROUTING = 346,
+     MIP6LMA = 347,
+     MIP6MAG = 348,
+     PROXYMIPLMA = 349,
+     PROXYMIPMAG = 350,
+     ALLLMAMULTICASTADDRESS = 351,
+     LMAPMIPNETWORKADDRESS = 352,
+     LMAPMIPNETWORKDEVICE = 353,
+     LMACORENETWORKADDRESS = 354,
+     LMACORENETWORKDEVICE = 355,
+     MAGADDRESSINGRESS = 356,
+     MAGADDRESSEGRESS = 357,
+     MAGDEVICEINGRESS = 358,
+     MAGDEVICEEGRESS = 359,
+     OURADDRESS = 360,
+     HOMENETWORKPREFIX = 361,
+     PBULIFETIME = 362,
+     PBALIFETIME = 363,
+     RETRANSMISSIONTIMEOUT = 364,
+     MAXMESSAGERETRANSMISSIONS = 365,
+     TUNNELINGENABLED = 366,
+     DYNAMICTUNNELINGENABLED = 367,
+     MAXDELAYBEFOREDYNAMICTUNNELINGDELETE = 368,
+     RADIUSPASSWORD = 369,
+     RADIUSCLIENTCONFIGFILE = 370,
+     PCAPSYSLOGASSOCIATIONGREPSTRING = 371,
+     PCAPSYSLOGDEASSOCIATIONGREPSTRING = 372,
+     INV_TOKEN = 373
+   };
+#endif
+/* Tokens.  */
+#define QSTRING 258
+#define ADDR 259
+#define MACADDR 260
+#define BOOL 261
+#define NUMBER 262
+#define DECIMAL 263
+#define NUMPAIR 264
+#define MIP6ENTITY 265
+#define DEBUGLEVEL 266
+#define DEBUGLOGFILE 267
+#define DOROUTEOPTIMIZATIONCN 268
+#define DOROUTEOPTIMIZATIONMN 269
+#define HOMEADDRESS 270
+#define HOMEAGENTADDRESS 271
+#define INITIALBINDACKTIMEOUTFIRSTREG 272
+#define INITIALBINDACKTIMEOUTREREG 273
+#define INITIALSOLICITTIMER 274
+#define INTERFACEINITIALINITDELAY 275
+#define LINKNAME 276
+#define HAMAXBINDINGLIFE 277
+#define MNMAXHABINDINGLIFE 278
+#define MNMAXCNBINDINGLIFE 279
+#define MAXMOBPFXADVINTERVAL 280
+#define MINMOBPFXADVINTERVAL 281
+#define MNHOMELINK 282
+#define HAHOMELINK 283
+#define NONVOLATILEBINDINGCACHE 284
+#define SENDMOBPFXSOLS 285
+#define SENDUNSOLMOBPFXADVS 286
+#define SENDMOBPFXADVS 287
+#define IPSECPOLICYSET 288
+#define IPSECPOLICY 289
+#define IPSECTYPE 290
+#define USEALTCOA 291
+#define USEESP 292
+#define USEAH 293
+#define USEIPCOMP 294
+#define BLOCK 295
+#define USEMNHAIPSEC 296
+#define KEYMNGMOBCAPABILITY 297
+#define HOMEREGBINDING 298
+#define MH 299
+#define MOBPFXDISC 300
+#define TUNNELHOMETESTING 301
+#define TUNNELMH 302
+#define TUNNELPAYLOAD 303
+#define USEMOVEMENTMODULE 304
+#define USEPOLICYMODULE 305
+#define MIP6CN 306
+#define MIP6MN 307
+#define MIP6HA 308
+#define INTERNAL 309
+#define MNROPOLICY 310
+#define ICMP 311
+#define ANY 312
+#define DOROUTEOPT 313
+#define DEFAULTBINDINGACLPOLICY 314
+#define BINDINGACLPOLICY 315
+#define MNADDRESS 316
+#define USECNBUACK 317
+#define INTERFACE 318
+#define IFNAME 319
+#define IFTYPE 320
+#define MNIFPREFERENCE 321
+#define ISTUNNEL 322
+#define MNUSEALLINTERFACES 323
+#define MNROUTERPROBES 324
+#define MNROUTERPROBETIMEOUT 325
+#define MNDISCARDHAPARAMPROB 326
+#define MNRESETDHAADATHOME 327
+#define MNFLUSHALLATHOME 328
+#define MNMAXHACONSECUTIVERESENDS 329
+#define MNMAXCNCONSECUTIVERESENDS 330
+#define OPTIMISTICHANDOFF 331
+#define NOHOMERETURN 332
+#define HOMEPREFIX 333
+#define HAACCEPTMOBRTR 334
+#define ISMOBRTR 335
+#define HASERVEDPREFIX 336
+#define MOBRTRUSEEXPLICITMODE 337
+#define CNBINDINGPOLICYSET 338
+#define RFC5213TIMESTAMPBASEDAPPROACHINUSE 339
+#define RFC5213MOBILENODEGENERATEDTIMESTAMPINUSE 340
+#define RFC5213FIXEDMAGLINKLOCALADDRESSONALLACCESSLINKS 341
+#define RFC5213FIXEDMAGLINKLAYERADDRESSONALLACCESSLINKS 342
+#define RFC5213MINDELAYBEFOREBCEDELETE 343
+#define RFC5213MAXDELAYBEFORENEWBCEASSIGN 344
+#define RFC5213TIMESTAMPVALIDITYWINDOW 345
+#define RFC5213ENABLEMAGLOCALROUTING 346
+#define MIP6LMA 347
+#define MIP6MAG 348
+#define PROXYMIPLMA 349
+#define PROXYMIPMAG 350
+#define ALLLMAMULTICASTADDRESS 351
+#define LMAPMIPNETWORKADDRESS 352
+#define LMAPMIPNETWORKDEVICE 353
+#define LMACORENETWORKADDRESS 354
+#define LMACORENETWORKDEVICE 355
+#define MAGADDRESSINGRESS 356
+#define MAGADDRESSEGRESS 357
+#define MAGDEVICEINGRESS 358
+#define MAGDEVICEEGRESS 359
+#define OURADDRESS 360
+#define HOMENETWORKPREFIX 361
+#define PBULIFETIME 362
+#define PBALIFETIME 363
+#define RETRANSMISSIONTIMEOUT 364
+#define MAXMESSAGERETRANSMISSIONS 365
+#define TUNNELINGENABLED 366
+#define DYNAMICTUNNELINGENABLED 367
+#define MAXDELAYBEFOREDYNAMICTUNNELINGDELETE 368
+#define RADIUSPASSWORD 369
+#define RADIUSCLIENTCONFIGFILE 370
+#define PCAPSYSLOGASSOCIATIONGREPSTRING 371
+#define PCAPSYSLOGDEASSOCIATIONGREPSTRING 372
+#define INV_TOKEN 373
+
+
+
+#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
+typedef union YYSTYPE
+{
+/* Line 2053 of yacc.c  */
+#line 114 "gram.y"
+
+	char *string;
+	struct in6_addr addr;
+	struct in6_addr macaddr;
+	char bool;
+	unsigned int num;
+	unsigned int numpair[2];
+	double dec;
+
+
+/* Line 2053 of yacc.c  */
+#line 304 "y.tab.h"
+} YYSTYPE;
+# define YYSTYPE_IS_TRIVIAL 1
+# define yystype YYSTYPE /* obsolescent; will be withdrawn */
+# define YYSTYPE_IS_DECLARED 1
+#endif
+
+extern YYSTYPE yylval;
+
+#ifdef YYPARSE_PARAM
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void *YYPARSE_PARAM);
+#else
+int yyparse ();
+#endif
+#else /* ! YYPARSE_PARAM */
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void);
+#else
+int yyparse ();
+#endif
+#endif /* ! YYPARSE_PARAM */
+
+#endif /* !YY_YY_Y_TAB_H_INCLUDED  */

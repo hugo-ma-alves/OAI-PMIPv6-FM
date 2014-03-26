@@ -73,10 +73,14 @@ mip6d_SOURCES = pmgr.c pmgr.h defpath.h \
 		./pmip/pmip_pcap.h \
 		./pmip/pmip_tunnel.c \
 		./pmip/pmip_tunnel.h \
-		./pmip/pmip_types.h
+		./pmip/pmip_types.h 
 
 if ENABLE_VT
 mip6d_SOURCES += vt.c vt.h
+endif
+
+if USE_ODTONE
+mip6d_SOURCES += ./pmip/pmip_odtone.h ./pmip/pmip_odtone.c
 endif
 
 if BUILTIN_CRYPTO

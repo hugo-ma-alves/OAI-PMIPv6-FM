@@ -2,7 +2,7 @@
  * $Id: conf.c 1.50 06/05/12 11:48:36+03:00 vnuorval@tcs.hut.fi $
  *
  * This file is part of the MIPL Mobile IPv6 for Linux.
- * 
+ *
  * Authors: Antti Tuominen <anttit@tcs.hut.fi>
  *          Ville Nuorvala <vnuorval@tcs.hut.fi>
  *
@@ -372,7 +372,7 @@ void conf_show(struct mip6_config *c)
 	    CONF_BOOL_STR(c->NonVolatileBindingCache));
 	if (c->pmgr.so_path)
 		dbg("PolicyModulePath = %s\n", c->pmgr.so_path);
-	
+
 	/* IPsec options */
 	dbg("KeyMngMobCapability = %s\n",
 	    CONF_BOOL_STR(c->KeyMngMobCapability));
@@ -405,9 +405,9 @@ void conf_show(struct mip6_config *c)
 		dbg("MnRouterProbes = %u\n", c->MnRouterProbes);
 		dbg("MnRouterProbeTimeout = %f\n",
 		    tstodsec(c->MnRouterProbeTimeout_ts));
-		dbg("InitialBindackTimeoutFirstReg = %f\n", 
+		dbg("InitialBindackTimeoutFirstReg = %f\n",
 		    tstodsec(c->InitialBindackTimeoutFirstReg_ts));
-		dbg("InitialBindackTimeoutReReg = %f\n", 
+		dbg("InitialBindackTimeoutReReg = %f\n",
 		    tstodsec(c->InitialBindackTimeoutReReg_ts));
 		dbg("InitialSolicitTimer = %f\n",
 		    tstodsec(c->InitialSolicitTimer_ts));
@@ -511,7 +511,7 @@ void conf_show(struct mip6_config *c)
 
 		dbg("MagAddressIngress = %x:%x:%x:%x:%x:%x:%x:%x\n",
 			NIP6ADDR(&c->MagAddressIngress[0]));
-		dbg("MagAddressEgress = %x:%x:%x:%x:%x:%x:%x:%x\n", 
+		dbg("MagAddressEgress = %x:%x:%x:%x:%x:%x:%x:%x\n",
 			NIP6ADDR(&c->MagAddressEgress[0]));
 		dbg("MagDeviceIngress = %s\n",
 			(c->MagDeviceIngress ? c->MagDeviceIngress : "No device"));
@@ -554,10 +554,24 @@ void conf_show(struct mip6_config *c)
 			(c->PcapSyslogDeAssociationGrepString ?
 			 c->PcapSyslogDeAssociationGrepString :
 			 "No syslog de-association grep string"));
+#ifdef USE_ODTONE
+        char str[INET_ADDRSTRLEN];
+        inet_ntop( AF_INET, &c->MIHFIPAddress,str, INET_ADDRSTRLEN);
+		dbg("Printing MIHF communication configurations\n");
+		//dbg("Link Mac address = %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&c->LinkMacAddress));
+		dbg("Link Mac address = %02x:%02x:%02x:%02x:%02x:%02x\n", c->LinkMacAddress[0],c->LinkMacAddress[1],
+														c->LinkMacAddress[2],c->LinkMacAddress[3],
+														c->LinkMacAddress[4],c->LinkMacAddress[5]);
+		dbg("MIHF IP address: %s\n",str);
+		dbg("MIHF client User name: %s\n", c->MIHFClientUserName );
+		dbg("MIHF ID: %s\n", c->MIHF_ID );
+        dbg("MIHF UDP PORT: %d\n", c->MIHFPort);
+#endif
+
 		break;
 
 		case MIP6_ENTITY_CN:
-		/* CN options: no specific options (DoRouteOptimizationCN 
+		/* CN options: no specific options (DoRouteOptimizationCN
 		 * is shared by all nodes) */
 		break;
 
@@ -582,7 +596,7 @@ void conf_free(struct mip6_config *c)
 		free(list_entry(h, struct net_iface, list));
 	}
 
-	/* For each home_addr_info, we have to remove the 
+	/* For each home_addr_info, we have to remove the
 	 * intern lists mob_net_prefix and ro_policy */
 	list_for_each_safe(h, nh, &c->home_addrs) {
 		struct home_addr_info *hai;
@@ -651,7 +665,7 @@ int conf_update(struct mip6_config *c,
 	}
 
 	/* Free the memory allocated during the process.
-	 * conf_free() does not free conf_new so we free it 
+	 * conf_free() does not free conf_new so we free it
 	 * by ourselves */
 	conf_free(conf_new);
 	free(conf_new);

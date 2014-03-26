@@ -1,3 +1,21 @@
+
+
+config.*
+.deps
+.libs
+*.tar.gz
+*.tar.bz2
+
+ylwrap
+man/*.man
+src/defpath.h
+src/gram.c
+src/gram.h
+src/pmgr.c
+src/pmgr.h
+src/scan.c
+src/mip6d
+
 # Object files
 *.o
 *.ko
@@ -16,3 +34,34 @@
 *.exe
 *.out
 *.app
+
+*~
+
+# Codeblocks
+
+*.cbp
+/*.layout
+
+### CMake ###
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+
+### Autotools ###
+# http://www.gnu.org/software/automake
+
+Makefile.in
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/aclocal.m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+/stamp-h1
