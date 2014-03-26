@@ -2,7 +2,6 @@
 
 
 char g_pcap_devname[32];
-
 int   g_pcap_iif;
 
 

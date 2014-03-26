@@ -80,9 +80,11 @@
 
 
 //Define STATUS FLAGS for FSM.
+
 #    define hasDEREG        0x00000050  /* Has a DEREG */
 /*!< \brief WLCCP message originating from access point, captured on MAG, message informing about wireless association of a mobile node with the access point */
 #    define hasWLCCP        0x00000040  /* Has a WLCCP CISCO protocol */
+#    define hasODTONELinkEvent        0x00000041  /* Has a Odtone(802.21 ) Link indication message */
 #    define hasRS           0x00000030  /* Has a RS */
 #    define hasNA           0x00000020  /* Has a NA */
 #    define hasNS           0x00000010  /* Has a NS */

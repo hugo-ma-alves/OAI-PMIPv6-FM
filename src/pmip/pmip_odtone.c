@@ -35,8 +35,7 @@ struct sockaddr_in mihf_socket;
 
 socklen_t sockaddr_len;
 
-u_int16_t transaction_id;
-
+uint16_t transaction_id;
 
 
 int start_odtone_listener(void)
@@ -109,7 +108,7 @@ int send_to_mih(char * str, int prim_length)
 }
 
 
-int configured_ap_matches_received_ap(char*str, int index)
+int check_if_cap_discovery_matches_conffile_listenInterface(char*str, int index)
 {
 
     unsigned char  mac[6];
@@ -173,7 +172,7 @@ int decode_capability_discover_response(char* str)
         else
         {
             dbg("Found link address list\n");
-            return configured_ap_matches_received_ap(str,i);
+            return check_if_cap_discovery_matches_conffile_listenInterface(str,i);
             break;
         }
 
@@ -191,7 +190,7 @@ int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
 
     dbg("Decoding Link event indication\n");
     dbg("The package HEX DUMP, for debugging purposes:\n");
-    debug_print_buffer(str,MIHLink_MAX_LENGTH,"decode_link_event_indication","MAC found");
+    debug_print_buffer(str,MIHLink_MAX_LENGTH,"decode_link_event_indication","Buffer received from MIHF");
 
     payload_length=  str[6]<<8 | str[7]; //Advance to header payload length
     i=sizeof(MIH_C_Header);// start in first TLV
@@ -202,15 +201,8 @@ int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
     while(i<payload_length)
     {
 
-        if(str[i] != TLV_NEW_ACCESS_ROUTER && str[i]!= TLV_OLD_ACCESS_ROUTER)
-        {
-            dbg("Discarding TLV FIELD of type %d \n", str[i]);
-            //It's not the interfaces list
-            i++; //Lenght
-            i+= str[i]; //advance length
-            i++; //advance to next TLV Type
-        }
-        else
+
+         if(str[i] == TLV_NEW_ACCESS_ROUTER || str[i] == TLV_OLD_ACCESS_ROUTER)
         {
             dbg("Found link address from an event\n");
             ++i; // TLV length
@@ -220,8 +212,14 @@ int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
             addressSize= str[i];
             *mobileNode_mac = malloc(sizeof(unsigned char)*addressSize);
             ++i;// first byte of mac address
-            memcpy(*mobileNode_mac,str, addressSize);
+            memcpy(*mobileNode_mac,&str[i], addressSize);
             return addressSize;
+        }else{
+            dbg("Discarding TLV FIELD of type %d \n", str[i]);
+            //It's not the interfaces list
+            i++; //Lenght
+            i+= str[i]; //advance length
+            i++; //advance to next TLV Type
         }
 
     }
@@ -474,7 +472,7 @@ void msg_handler_associate(unsigned char * mn_iidP)
     memset(&msg, 0, sizeof(msg_info_t));
     msg.mn_iid = EUI48_to_EUI64(macAddress48);
     msg.iif = g_pcap_iif;
-    msg.msg_event = hasWLCCP;
+    msg.msg_event = hasODTONELinkEvent;
     mag_fsm(&msg);
 }
 

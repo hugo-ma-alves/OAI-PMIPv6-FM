@@ -4,17 +4,17 @@
  * Authors: OPENAIR3 <openair_tech@eurecom.fr>
  *
  * Copyright 2010-2011 EURECOM (Sophia-Antipolis, FRANCE)
- * 
- * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility 
- * management protocol standardized by IETF. It is a protocol for building 
- * a common and access technology independent of mobile core networks, 
- * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2 
- * and WLAN based access architectures. Proxy Mobile IPv6 is the only 
+ *
+ * Proxy Mobile IPv6 (or PMIPv6, or PMIP) is a network-based mobility
+ * management protocol standardized by IETF. It is a protocol for building
+ * a common and access technology independent of mobile core networks,
+ * accommodating various access technologies such as WiMAX, 3GPP, 3GPP2
+ * and WLAN based access architectures. Proxy Mobile IPv6 is the only
  * network-based mobility management protocol standardized by IETF.
- * 
+ *
  * PMIP Proxy Mobile IPv6 for Linux has been built above MIPL free software;
  * which it involves that it is under the same terms of GNU General Public
- * License version 2. See MIPL terms condition if you need more details. 
+ * License version 2. See MIPL terms condition if you need more details.
  */
 /*! \file pmip_fsm.c
  * \brief
@@ -90,6 +90,23 @@ int mag_fsm(msg_info_t * info)
               //yet to process
           } else if (info->msg_event == hasWLCCP) {
               dbg("Incoming MN is detected by Wireless Access Point, start new registration ...\n\n");
+              bce = pmip_cache_alloc(BCE_TEMP);
+              prefix = mnid_hnp_map(hw_address, &aaa_result);
+              if (aaa_result >= 0) {
+                  bce->mn_prefix = prefix;
+                  bce->mn_suffix = info->mn_iid;
+                  bce->mn_hw_address = hw_address;
+                  info->mn_prefix = prefix;
+                  result = mag_pmip_md(info, bce);
+                  dbg("Movement detection is finished, now going to add an entry into the cache\n\n");
+                  pmip_cache_add(bce);
+                  dbg("pmip_cache_add is done \n\n");
+              } else {
+                  dbg("Authentication failed\n");
+              }
+              //yet to process
+          } else if (info->msg_event == hasODTONELinkEvent) {
+              dbg("Incoming MN is detected by ODTONE, start new registration ...\n\n");
               bce = pmip_cache_alloc(BCE_TEMP);
               prefix = mnid_hnp_map(hw_address, &aaa_result);
               if (aaa_result >= 0) {
@@ -192,7 +209,17 @@ int mag_fsm(msg_info_t * info)
             mag_force_update_registration(bce, info->iif);
             pmipcache_release_entry(bce);
             dbg("RA sent after MN AP detection ...\n");
-        } else if (info->msg_event == hasDEREG) {
+        } else if (info->msg_event == hasODTONELinkEvent) {
+            dbg("Incomming MN is detected by Odtone 802.21, existing MN\n");
+            bce = pmip_cache_get(&conf.OurAddress, &hw_address);
+            dbg("Prefix before entering kickoff_ra : %x:%x:%x:%x:%x:%x:%x:%x \n", NIP6ADDR(&bce->mn_prefix));
+            mag_kickoff_ra(bce);
+            // Some case where the access point did not detect the departure of the mobile node
+            // so we have to register again to the LMA
+            mag_force_update_registration(bce, info->iif);
+            pmipcache_release_entry(bce);
+            dbg("RA sent after MN Odtone 802.21 detection ...\n");
+        }else if (info->msg_event == hasDEREG) {
             dbg("Deregistration procedure detected by Wireless Access Point for a registered MN\n");
             dbg("Start Location Deregistration\n");
             bce = pmip_cache_get(&conf.OurAddress, &hw_address);
