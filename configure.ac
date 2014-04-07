@@ -169,6 +169,25 @@ AC_CACHE_CHECK([whether to use ODTONE implementation of 802.21],
 AM_CONDITIONAL(USE_ODTONE, test x$ac_cv_pmip_with_odtone = xyes)
 
 
+dnl Option --with-flow-mobility
+AC_ARG_ENABLE(flow-mobility,
+			AC_HELP_STRING([--enable-flow-mobility],[Enables Flow mobility]),
+			[ac_cv_pmip_enable_flow_mobility=yes], [ac_cv_pmip_enable_flow_mobility=no])
+
+if test x$ac_cv_pmip_enable_flow_mobility = xyes; then
+        AC_DEFINE([ENABLE_FLOW_MOBILITY], [1], [Enable flow mobility ])
+	
+	AC_CHECK_LIB(nfnetlink, pcap_next, [], [
+	AC_MSG_ERROR([Library nfnetlink Required but not found])
+	])
+	AC_CHECK_LIB(netfilter_queue, pcap_next, [], [
+	AC_MSG_ERROR([Library lnetfilter_queue Required but not found])
+	])
+fi
+
+AC_CACHE_CHECK([whether to Enable flow mobility extensions],
+			   [ac_cv_pmip_enable_flow_mobility], [ac_cv_pmip_enable_flow_mobility=no])
+AM_CONDITIONAL(ENABLE_FLOW_MOBILITY, test x$ac_cv_pmip_enable_flow_mobility = xyes)
 
 
 dnl Option --disable-debug
@@ -279,7 +298,7 @@ AC_PACKAGE_NAME version AC_PACKAGE_VERSION
   Enable debugging mode: .......... $ac_cv_enable_debug
   Enable virtual debug terminal: .. $ac_cv_enable_vt
   Use ODTONE 802_21 to detect clients: .. $ac_cv_pmip_with_odtone
-
+  Enable FLow Mobility extensions		..$ac_cv_pmip_enable_flow_mobility
   Build target: $host
   CPPFLAGS: $CPPFLAGS
 ])
