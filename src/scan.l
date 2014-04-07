@@ -342,6 +342,8 @@ MIHFIPAddress			{ return MIHFIPADDRESS; }
 MIHFClientUserName		{ return MIHFCLIENTUSERNAME; }
 MIHF_ID				{ return MIHFID; }
 MIHFPort			{return MIHFPORT; }
+UserSpacePacketQueueID			{return USERSPACEPACKETQUEUEID; }
+
 
 {addr}		{
 			int i;

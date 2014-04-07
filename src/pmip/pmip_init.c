@@ -58,6 +58,11 @@
 #   include "pmip_odtone.h"
 #endif
 
+#ifdef ENABLE_FLOW_MOBILITY
+#   include "fmpmip/flowmob_hash_struct.h"
+#   include "fmpmip/fmpmip_packet_marker.h"
+#endif
+
 #define IPV6_ALL_SOLICITED_MCAST_ADDR 68
 //---------------------------------------------------------------------------------------------------------------------
 extern struct sock icmp6_sock;
@@ -183,9 +188,9 @@ int pmip_mag_init(void)
     /**
      * Adds a default rule for RT6_TABLE_MIP6.
      */
-    dbg("Add default rule for RT6_TABLE_MIP6\n");
-    if (rule_add(NULL, RT6_TABLE_MIP6, IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST, &in6addr_any, 0, &in6addr_any, 0, 0) < 0)
-    {
+     dbg("Add default rule for RT6_TABLE_MIP6\n");
+     if (rule_add(NULL, RT6_TABLE_MIP6, IP6_RULE_PRIO_MIP6_FWD, RTN_UNICAST, &in6addr_any, 0, &in6addr_any, 0, 0) < 0)
+     {
         dbg("Add default rule for RT6_TABLE_MIP6 failed, insufficient privilege/kernel options missing!\n");
         return -1;
     }
@@ -193,8 +198,8 @@ int pmip_mag_init(void)
     /**
      * Initialize timers of tunnels (tunnels between LMA and MAGs).
      */
-    if (pmip_tunnels_init() < 0)
-    {
+     if (pmip_tunnels_init() < 0)
+     {
         dbg("PMIP Tunnels initialization failed! \n");
         return -1;
     }
@@ -268,8 +273,8 @@ int pmip_lma_init(void)
     /**
      * Initialize timers of tunnels (tunnels between LMA and MAGs).
      */
-    if (pmip_tunnels_init() < 0)
-    {
+     if (pmip_tunnels_init() < 0)
+     {
         dbg("PMIP Tunnels initialization failed! \n");
         return -1;
     }
@@ -284,5 +289,23 @@ int pmip_lma_init(void)
     dbg("Initializing the PBU handler\n");
     //To capture PBU message.
     //mh_handler_reg(IP6_MH_TYPE_BU, &pmip_lma_pbu_handler);
+
+#ifdef ENABLE_FLOW_MOBILITY
+    int ret=0;
+    ret=flowmob_cache_init();
+    if(ret!=0){
+        dbg("Error initializing flow mob cache\n");
+        return -1;
+    }
+    dbg("Flow Mob cache initialized with success\n");
+
+    dbg("Starting Packet Queue manager thread\n");
+    ret = fmpmip_flow_handler_init(conf.UserSpacePacketsQueue);
+    if(ret!=0){
+        dbg("Error initializing Packet Queue manager thread\n");
+        return -1;
+    }
+
+#endif
     return 0;
 }

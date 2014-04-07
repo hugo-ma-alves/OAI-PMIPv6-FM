@@ -75,19 +75,26 @@ mip6d_SOURCES = pmgr.c pmgr.h defpath.h \
 		./pmip/pmip_tunnel.h \
 		./pmip/pmip_types.h 
 
+mip6d_LDADD= 
+
 if ENABLE_VT
 mip6d_SOURCES += vt.c vt.h
 endif
 
 if USE_ODTONE
-mip6d_SOURCES += ./pmip/pmip_odtone.h ./pmip/pmip_odtone.c
+mip6d_SOURCES += ./pmip/pmip_odtone.h ./pmip/pmip_odtone.c 
+endif
+
+if ENABLE_FLOW_MOBILITY
+mip6d_LDADD += -lnfnetlink  -lnetfilter_queue
+mip6d_SOURCES += ./pmip/fmpmip/fmpmip_packet_marker.h ./pmip/fmpmip/fmpmip_packet_marker.c ./pmip/fmpmip/flowmob_hash_struct.h ./pmip/fmpmip/flowmob_hash_struct.c 
 endif
 
 if BUILTIN_CRYPTO
 mip6d_SOURCES += crypto.c crypto.h
 endif
 
-mip6d_LDADD =  -lpcap
+mip6d_LDADD +=  -lpcap
 if USE_RADIUS
 mip6d_LDADD += -lfreeradius-client
 AM_CFLAGS    += -DUSE_RADIUS
