@@ -110,7 +110,9 @@ struct mip6_config {
 	 char* MIHFClientUserName;
 	 char* MIHF_ID;
 	 uint16_t MIHFPort;
-
+	
+	/* Flow Mobility specific Options*/
+	 int UserSpacePacketsQueue;
 
 };
 

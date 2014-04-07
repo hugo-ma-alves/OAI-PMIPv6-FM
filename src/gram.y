@@ -246,6 +246,10 @@ static void uerror(const char *fmt, ...) {
 %token 		MIHFID
 %token 		MIHFPORT
 
+/* PMIP FLOW MOB CONF ELEMENTS */
+%token 		USERSPACEPACKETQUEUEID
+
+
 %token		INV_TOKEN
 
 %type <num>	ipsectype
@@ -1021,6 +1025,10 @@ proxymiplmaopt	: LMAPMIPNETWORKADDRESS ADDR ';'
 			if (! IN6_IS_ADDR_UNSPECIFIED(&conf_parsed->MagAddressEgress[conf_parsed->NumMags])) {
 				conf_parsed->NumMags = conf_parsed->NumMags + 1;
 			}
+		}
+		| USERSPACEPACKETQUEUEID NUMBER ';'
+		{
+			conf_parsed->UserSpacePacketsQueue = $2;
 		}
 		;
 

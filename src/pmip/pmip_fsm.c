@@ -310,7 +310,7 @@ int lma_fsm(msg_info_t * info)
             } else { //Received PBU from an already unregistered MAG
                 dbg("Deregistration for not registered MAG, doing nothing\n");
                 //lma_dereg(bce, info, 0);
-                pmipcache_release_entry(bce);
+                pmipcache_release_entry(bce);  // Release lock
             }
         }
         // update bce->mn_addr attribute for vt display
