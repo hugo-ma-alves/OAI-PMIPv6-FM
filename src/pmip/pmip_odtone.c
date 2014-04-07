@@ -1,10 +1,9 @@
+#define PMIP_ODTONE_C
 #define PMIP
 
 #ifdef HAVE_CONFIG_H
 #       include <config.h>
 #endif
-#include <string.h>
-#include <ctype.h>
 //---------------------------------------------------------------------------------------------------------------------
 #include "pmip_fsm.h"
 #include "pmip_hnp_cache.h"
@@ -21,13 +20,13 @@
 #include "MIHC_Interface/MIH_C_Link_Primitives.h"
 
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 
+#include "pmip_mag_proc.h"
+
+static void msg_handler_associate(unsigned char * mn_iidP);
+static void msg_handler_deassociate(unsigned char * mn_iidP);
 
 static pthread_t socket_listener;
 int  sock;
@@ -108,7 +107,7 @@ int send_to_mih(char * str, int prim_length)
 }
 
 
-int check_if_cap_discovery_matches_conffile_listenInterface(char*str, int index)
+int check_if_cap_discovery_matches_conffile_listenInterface(char *str, int index)
 {
 
     unsigned char  mac[6];
@@ -122,15 +121,15 @@ int check_if_cap_discovery_matches_conffile_listenInterface(char*str, int index)
 
     do
     {
-        index+=9; //advance to first link address
-        mac[0]=str[index];
+        index+=9; //advance to first/next link address
+        //mac[0]=str[index];
         dbg("Found Link sap number %d:\n",numberOfElemets);
         memcpy(mac, &str[index],6);
 
         debug_print_buffer(mac ,6, "decodeLinkList"," Received Link:");
         index = index+5;
 
-        if(strcmp(mac, conf.LinkMacAddress)==0)
+        if(memcmp(mac, conf.LinkMacAddress, 6)==0)
         {
             return 1;
         }
@@ -230,7 +229,7 @@ int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
 
 //-----------------------------------------------------------------------------
 // Process incoming messages from MIHF
-int process_incoming_message(void)
+void* process_incoming_message(__attribute__ ((unused)) void *arg)
 {
 
     dbg("Starting incoming MIHF messages listener....\n");
@@ -250,7 +249,7 @@ int process_incoming_message(void)
         n = recvfrom(sock, (void *)str, MIHLink_MAX_LENGTH, 0, (struct sockaddr *) &mihf_socket, &sockaddr_len);
 
         ODTONE_Header = (MIH_C_Header *) str;
-        dbg("Received message from MIHF\n");
+        dbg("Received message from MIHF with %d bytes\n",n);
         dbg("It's ID is %d \n",ODTONE_Header->Message_ID);
 
         switch(ODTONE_Header->Message_ID)
@@ -285,8 +284,6 @@ int process_incoming_message(void)
         }
 
     }
-
-    return 0;
 }
 
 
@@ -462,7 +459,7 @@ int send_event_subscribe_request(void)
 }
 
 
-void msg_handler_associate(unsigned char * mn_iidP)
+static void msg_handler_associate(unsigned char * mn_iidP)
 {
     dbg("Sending message to mag finite state machine\n");
     struct in6_addr macAddress48;
@@ -476,7 +473,7 @@ void msg_handler_associate(unsigned char * mn_iidP)
     mag_fsm(&msg);
 }
 
-void msg_handler_deassociate(unsigned char * mn_iidP)
+static void msg_handler_deassociate(unsigned char * mn_iidP)
 {
     dbg("Sending message to mag finite state machine\n");
     struct in6_addr macAddress48;
