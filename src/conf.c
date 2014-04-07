@@ -56,200 +56,200 @@
 #include "vt.h"
 #endif
 
-static void conf_usage(char *exec_name)
-{
-	fprintf(stderr,
-		"Usage: %s [options]\nOptions:\n"
-		"  -V, --version            Display version information and copyright\n"
-		"  -?, -h, --help           Display this help text\n"
-		"  -c <file>                Read configuration from <file>\n"
+ static void conf_usage(char *exec_name)
+ {
+ 	fprintf(stderr,
+ 		"Usage: %s [options]\nOptions:\n"
+ 		"  -V, --version            Display version information and copyright\n"
+ 		"  -?, -h, --help           Display this help text\n"
+ 		"  -c <file>                Read configuration from <file>\n"
 #ifdef ENABLE_VT
-		"      --vt-service <serv>  Set VT service (default=" VT_DEFAULT_SERVICE ")\n"
+ 		"      --vt-service <serv>  Set VT service (default=" VT_DEFAULT_SERVICE ")\n"
 #endif
-		"\n These options override values read from config file:\n"
-		"  -d <number>              Set debug level (0-10)\n"
-		"  -l <file>                Write debug log to <file> instead of stderr\n"
-		"  -C, --correspondent-node Node is CN\n"
-		"  -H, --home-agent         Node is HA\n"
-		"  -M, --mobile-node        Node is MN\n\n"
-		"For bug reporting, see %s.\n",
-		exec_name, PACKAGE_BUGREPORT);
-}
+ 		"\n These options override values read from config file:\n"
+ 		"  -d <number>              Set debug level (0-10)\n"
+ 		"  -l <file>                Write debug log to <file> instead of stderr\n"
+ 		"  -C, --correspondent-node Node is CN\n"
+ 		"  -H, --home-agent         Node is HA\n"
+ 		"  -M, --mobile-node        Node is MN\n\n"
+ 		"For bug reporting, see %s.\n",
+ 		exec_name, PACKAGE_BUGREPORT);
+ }
 
-static void conf_version(void)
-{
-	fprintf(stderr,
-		"%s (%s) %s\n"
-		"%s\n"
-		"This is free software; see the source for copying conditions.  There is NO\n"
-		"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
-		PACKAGE, PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_COPYRIGHT);
-}
+ static void conf_version(void)
+ {
+ 	fprintf(stderr,
+ 		"%s (%s) %s\n"
+ 		"%s\n"
+ 		"This is free software; see the source for copying conditions.  There is NO\n"
+ 		"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n",
+ 		PACKAGE, PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_COPYRIGHT);
+ }
 
-static int conf_alt_file(char *filename, int argc, char **argv)
-{
-	int args_left = argc;
-	char **cur_arg = argv;
+ static int conf_alt_file(char *filename, int argc, char **argv)
+ {
+ 	int args_left = argc;
+ 	char **cur_arg = argv;
 
-	while (args_left--) {
-		if (strcmp(*cur_arg, "-c") == 0 && args_left > 0) {
-			cur_arg++;
-			if (**cur_arg == '-')
-				return -EINVAL;
-			if (strlen(*cur_arg) >= MAXPATHLEN)
-				return -ENAMETOOLONG;
-			strcpy(filename, *cur_arg);
-			return 0;
-		}
-		cur_arg++;
-	}
+ 	while (args_left--) {
+ 		if (strcmp(*cur_arg, "-c") == 0 && args_left > 0) {
+ 			cur_arg++;
+ 			if (**cur_arg == '-')
+ 				return -EINVAL;
+ 			if (strlen(*cur_arg) >= MAXPATHLEN)
+ 				return -ENAMETOOLONG;
+ 			strcpy(filename, *cur_arg);
+ 			return 0;
+ 		}
+ 		cur_arg++;
+ 	}
 
-	return 1;
-}
+ 	return 1;
+ }
 
-static int conf_file(struct mip6_config *c, char *filename)
-{
-	extern FILE *yyin;
-	int ret;
+ static int conf_file(struct mip6_config *c, char *filename)
+ {
+ 	extern FILE *yyin;
+ 	int ret;
 
-	yyin = fopen(filename, "r");
-	if (yyin == NULL)
-		return -ENOENT;
+ 	yyin = fopen(filename, "r");
+ 	if (yyin == NULL)
+ 		return -ENOENT;
 
-	c->config_file = malloc(strlen(filename) + 1);
-	if (c->config_file == NULL)
-		return -ENOMEM;
-	strcpy(c->config_file, filename);
+ 	c->config_file = malloc(strlen(filename) + 1);
+ 	if (c->config_file == NULL)
+ 		return -ENOMEM;
+ 	strcpy(c->config_file, filename);
 
-	ret = yyparse();
+ 	ret = yyparse();
 
-	fclose(yyin);
+ 	fclose(yyin);
 
 	/* Free memory allocated by yyparse() */
-	yylex_destroy();
+ 	yylex_destroy();
 
-	if (ret) return -EINVAL;
+ 	if (ret) return -EINVAL;
 
-	return 0;
-}
+ 	return 0;
+ }
 
-static int conf_cmdline(struct mip6_config *cfg, int argc, char **argv)
-{
-	static struct option long_opts[] = {
-		{"version", 0, 0, 'V'},
-		{"help", 0, 0, 'h'},
-		{"correspondent-node", 0, 0, 'C'},
-		{"home-agent", 0, 0, 'H'},
-		{"mobile-node", 0, 0, 'M'},
-		{"show-config", 0, 0, 0},
+ static int conf_cmdline(struct mip6_config *cfg, int argc, char **argv)
+ {
+ 	static struct option long_opts[] = {
+ 		{"version", 0, 0, 'V'},
+ 		{"help", 0, 0, 'h'},
+ 		{"correspondent-node", 0, 0, 'C'},
+ 		{"home-agent", 0, 0, 'H'},
+ 		{"mobile-node", 0, 0, 'M'},
+ 		{"show-config", 0, 0, 0},
 #ifdef ENABLE_VT
-		{"vt-service", 1, 0, 0 },
+ 		{"vt-service", 1, 0, 0 },
 #endif
-		{0, 0, 0, 0}
-	};
+ 		{0, 0, 0, 0}
+ 	};
 
 	/* parse all other cmd line parameters than -c */
-	while (1) {
-		int idx, c;
-		c = getopt_long(argc, argv, "c:d:l:Vh?CMH", long_opts, &idx);
-		if (c == -1) break;
+ 	while (1) {
+ 		int idx, c;
+ 		c = getopt_long(argc, argv, "c:d:l:Vh?CMH", long_opts, &idx);
+ 		if (c == -1) break;
 
-		switch (c) {
-		case 0:
+ 		switch (c) {
+ 			case 0:
 #ifdef ENABLE_VT
-			if (strcmp(long_opts[idx].name, "vt-service") == 0) {
-				cfg->vt_service = optarg;
-				break;
-			}
+ 			if (strcmp(long_opts[idx].name, "vt-service") == 0) {
+ 				cfg->vt_service = optarg;
+ 				break;
+ 			}
 #endif
-			if (idx == 5)
-				conf_show(cfg);
-			return -1;
-		case 'V':
-			conf_version();
-			return -1;
-		case '?':
-		case 'h':
-			conf_usage(basename(argv[0]));
-			return -1;
-		case 'd':
-			cfg->debug_level = atoi(optarg);
-			break;
-		case 'l':
-			cfg->debug_log_file = optarg;
-			break;
-		case 'C':
-			cfg->mip6_entity = MIP6_ENTITY_CN;
-			break;
-		case 'H':
-			cfg->mip6_entity = MIP6_ENTITY_HA;
-			break;
-		case 'M':
-			cfg->mip6_entity = MIP6_ENTITY_MN;
-			break;
-		default:
-			break;
-		};
-	}
-	return 0;
-}
+ 			if (idx == 5)
+ 				conf_show(cfg);
+ 			return -1;
+ 			case 'V':
+ 			conf_version();
+ 			return -1;
+ 			case '?':
+ 			case 'h':
+ 			conf_usage(basename(argv[0]));
+ 			return -1;
+ 			case 'd':
+ 			cfg->debug_level = atoi(optarg);
+ 			break;
+ 			case 'l':
+ 			cfg->debug_log_file = optarg;
+ 			break;
+ 			case 'C':
+ 			cfg->mip6_entity = MIP6_ENTITY_CN;
+ 			break;
+ 			case 'H':
+ 			cfg->mip6_entity = MIP6_ENTITY_HA;
+ 			break;
+ 			case 'M':
+ 			cfg->mip6_entity = MIP6_ENTITY_MN;
+ 			break;
+ 			default:
+ 			break;
+ 		};
+ 	}
+ 	return 0;
+ }
 
-static void conf_default(struct mip6_config *c)
-{
-	int i;
-	memset(c, 0, sizeof(*c));
+ static void conf_default(struct mip6_config *c)
+ {
+ 	int i;
+ 	memset(c, 0, sizeof(*c));
 
 	/* Common options */
 #ifdef ENABLE_VT
-	c->vt_hostname = VT_DEFAULT_HOSTNAME;
-	c->vt_service = VT_DEFAULT_SERVICE;
+ 	c->vt_hostname = VT_DEFAULT_HOSTNAME;
+ 	c->vt_service = VT_DEFAULT_SERVICE;
 #endif
-	c->mip6_entity = MIP6_ENTITY_CN;
-	pmgr_init(NULL, &c->pmgr);
-	INIT_LIST_HEAD(&c->net_ifaces);
-	INIT_LIST_HEAD(&c->bind_acl);
-	c->DefaultBindingAclPolicy = IP6_MH_BAS_ACCEPTED;
+ 	c->mip6_entity = MIP6_ENTITY_CN;
+ 	pmgr_init(NULL, &c->pmgr);
+ 	INIT_LIST_HEAD(&c->net_ifaces);
+ 	INIT_LIST_HEAD(&c->bind_acl);
+ 	c->DefaultBindingAclPolicy = IP6_MH_BAS_ACCEPTED;
 
 	/* IPsec options */
-	c->UseMnHaIPsec = 1;
-	INIT_LIST_HEAD(&c->ipsec_policies);
+ 	c->UseMnHaIPsec = 1;
+ 	INIT_LIST_HEAD(&c->ipsec_policies);
 
 	/* MN options */
-	c->MnMaxHaBindingLife = MAX_BINDING_LIFETIME;
-	c->MnMaxCnBindingLife = MAX_RR_BINDING_LIFETIME;
+ 	c->MnMaxHaBindingLife = MAX_BINDING_LIFETIME;
+ 	c->MnMaxCnBindingLife = MAX_RR_BINDING_LIFETIME;
 	tssetdsec(c->InitialBindackTimeoutFirstReg_ts, 1.5);/*seconds*/
 	tssetsec(c->InitialBindackTimeoutReReg_ts, INITIAL_BINDACK_TIMEOUT);/*seconds*/
 	tssetsec(c->InitialSolicitTimer_ts, INITIAL_SOLICIT_TIMER);/*seconds*/
 	tssetsec(c->InterfaceInitialInitDelay_ts, 2); /*seconds*/
-	INIT_LIST_HEAD(&c->home_addrs);
+ 	INIT_LIST_HEAD(&c->home_addrs);
 	c->MoveModulePath = NULL; /* internal */
-	c->DoRouteOptimizationMN = 1;
-	c->MobRtrUseExplicitMode = 1;
-	c->SendMobPfxSols = 1;
-	c->OptimisticHandoff = 0;
-	c->NoHomeReturn = 0;
-	c->MnResetDhaadAtHome = 0;
-	c->MnFlushAllAtHome = 0;
-	c->MnMaxCnConsecutiveResends = 0;
-	c->MnMaxHaConsecutiveResends = 5;
+ 	c->DoRouteOptimizationMN = 1;
+ 	c->MobRtrUseExplicitMode = 1;
+ 	c->SendMobPfxSols = 1;
+ 	c->OptimisticHandoff = 0;
+ 	c->NoHomeReturn = 0;
+ 	c->MnResetDhaadAtHome = 0;
+ 	c->MnFlushAllAtHome = 0;
+ 	c->MnMaxCnConsecutiveResends = 0;
+ 	c->MnMaxHaConsecutiveResends = 5;
 
 	/* HA options */
-	c->SendMobPfxAdvs = 1;
-	c->SendUnsolMobPfxAdvs = 1;
+ 	c->SendMobPfxAdvs = 1;
+ 	c->SendUnsolMobPfxAdvs = 1;
 	c->MaxMobPfxAdvInterval = 86400; /* seconds */
 	c->MinMobPfxAdvInterval = 600; /* seconds */
-	c->HaMaxBindingLife = MAX_BINDING_LIFETIME;
-	INIT_LIST_HEAD(&c->nemo_ha_served_prefixes);
+ 	c->HaMaxBindingLife = MAX_BINDING_LIFETIME;
+ 	INIT_LIST_HEAD(&c->nemo_ha_served_prefixes);
 
 
 	/* PMIP global options */
-	c->RFC5213TimestampBasedApproachInUse = 1;
-	c->RFC5213MobileNodeGeneratedTimestampInUse = 1;
-	c->RFC5213FixedMAGLinkLocalAddressOnAllAccessLinks = in6addr_any;
-	c->RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks = in6addr_any;
-	struct timespec lifetime_tunnels;
-	lifetime_tunnels.tv_sec  = 60;
-	lifetime_tunnels.tv_nsec = 0;
+ 	c->RFC5213TimestampBasedApproachInUse = 1;
+ 	c->RFC5213MobileNodeGeneratedTimestampInUse = 1;
+ 	c->RFC5213FixedMAGLinkLocalAddressOnAllAccessLinks = in6addr_any;
+ 	c->RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks = in6addr_any;
+ 	struct timespec lifetime_tunnels;
+ 	lifetime_tunnels.tv_sec  = 60;
+ 	lifetime_tunnels.tv_nsec = 0;
 	c->MaxDelayBeforeDynamicTunnelingDelete   = lifetime_tunnels; // 60000 milliseconds
 
 	/* PMIP LMA options */
@@ -355,27 +355,27 @@ void conf_show(struct mip6_config *c)
 	dbg("NodeConfig = %u\n", c->mip6_entity);
 	dbg("DebugLevel = %u\n", c->debug_level);
 	dbg("DebugLogFile = %s\n",
-	    (c->debug_log_file ? c->debug_log_file : "stderr"));
+		(c->debug_log_file ? c->debug_log_file : "stderr"));
 	dbg("DoRouteOptimizationCN = %s\n",
-	    CONF_BOOL_STR(c->DoRouteOptimizationCN));
+		CONF_BOOL_STR(c->DoRouteOptimizationCN));
 	list_for_each(list, &c->cn_binding_pol) {
 		struct cn_binding_pol_entry *pol;
 		pol = list_entry(list, struct cn_binding_pol_entry, list);
 		dbg("CnBindingPolicySet %x:%x:%x:%x:%x:%x:%x:%x "
-		    "%x:%x:%x:%x:%x:%x:%x:%x %s\n",
-		    NIP6ADDR(&pol->remote_hoa),
-		    NIP6ADDR(&pol->local_addr),
-		    pol->bind_policy ? "enabled" : "disabled" );
+			"%x:%x:%x:%x:%x:%x:%x:%x %s\n",
+			NIP6ADDR(&pol->remote_hoa),
+			NIP6ADDR(&pol->local_addr),
+			pol->bind_policy ? "enabled" : "disabled" );
 	}
 
 	dbg("NonVolatileBindingCache = %s\n",
-	    CONF_BOOL_STR(c->NonVolatileBindingCache));
+		CONF_BOOL_STR(c->NonVolatileBindingCache));
 	if (c->pmgr.so_path)
 		dbg("PolicyModulePath = %s\n", c->pmgr.so_path);
 
 	/* IPsec options */
 	dbg("KeyMngMobCapability = %s\n",
-	    CONF_BOOL_STR(c->KeyMngMobCapability));
+		CONF_BOOL_STR(c->KeyMngMobCapability));
 	dbg("UseMnHaIPsec = %s\n", CONF_BOOL_STR(c->UseMnHaIPsec));
 
 	switch (c->mip6_entity) {
@@ -384,37 +384,37 @@ void conf_show(struct mip6_config *c)
 		dbg("MnMaxHaBindingLife = %u\n", c->MnMaxHaBindingLife);
 		dbg("MnMaxCnBindingLife = %u\n", c->MnMaxCnBindingLife);
 		dbg("MnDiscardHaParamProb = %s\n",
-		    CONF_BOOL_STR(c->MnDiscardHaParamProb));
+			CONF_BOOL_STR(c->MnDiscardHaParamProb));
 		dbg("MnResetDhaadAtHome = %s\n",
-		    CONF_BOOL_STR(c->MnResetDhaadAtHome));
+			CONF_BOOL_STR(c->MnResetDhaadAtHome));
 		dbg("MnFlushAllAtHome = %s\n",
-		    CONF_BOOL_STR(c->MnFlushAllAtHome));
+			CONF_BOOL_STR(c->MnFlushAllAtHome));
 		dbg("MnMaxHaConsecutiveResends = %u\n",
-		    c->MnMaxHaConsecutiveResends);
+			c->MnMaxHaConsecutiveResends);
 		dbg("MnMaxCnConsecutiveResends = %u\n",
-		    c->MnMaxCnConsecutiveResends);
+			c->MnMaxCnConsecutiveResends);
 		dbg("SendMobPfxSols = %s\n",
-		    CONF_BOOL_STR(c->SendMobPfxSols));
+			CONF_BOOL_STR(c->SendMobPfxSols));
 		dbg("DoRouteOptimizationMN = %s\n",
-		    CONF_BOOL_STR(c->DoRouteOptimizationMN));
+			CONF_BOOL_STR(c->DoRouteOptimizationMN));
 		dbg("MnUseAllInterfaces = %s\n",
-		    CONF_BOOL_STR(c->MnUseAllInterfaces));
+			CONF_BOOL_STR(c->MnUseAllInterfaces));
 		dbg("UseCnBuAck = %s\n", CONF_BOOL_STR(c->CnBuAck));
 		dbg("InterfaceInitialInitDelay = %f\n",
-		    tstodsec(c->InterfaceInitialInitDelay_ts));
+			tstodsec(c->InterfaceInitialInitDelay_ts));
 		dbg("MnRouterProbes = %u\n", c->MnRouterProbes);
 		dbg("MnRouterProbeTimeout = %f\n",
-		    tstodsec(c->MnRouterProbeTimeout_ts));
+			tstodsec(c->MnRouterProbeTimeout_ts));
 		dbg("InitialBindackTimeoutFirstReg = %f\n",
-		    tstodsec(c->InitialBindackTimeoutFirstReg_ts));
+			tstodsec(c->InitialBindackTimeoutFirstReg_ts));
 		dbg("InitialBindackTimeoutReReg = %f\n",
-		    tstodsec(c->InitialBindackTimeoutReReg_ts));
+			tstodsec(c->InitialBindackTimeoutReReg_ts));
 		dbg("InitialSolicitTimer = %f\n",
-		    tstodsec(c->InitialSolicitTimer_ts));
+			tstodsec(c->InitialSolicitTimer_ts));
 		dbg("OptimisticHandoff = %s\n",
-		    CONF_BOOL_STR(c->OptimisticHandoff));
+			CONF_BOOL_STR(c->OptimisticHandoff));
 		dbg("MobRtrUseExplicitMode = %s\n",
-		    CONF_BOOL_STR(c->MobRtrUseExplicitMode));
+			CONF_BOOL_STR(c->MobRtrUseExplicitMode));
 		dbg("NoHomeReturn = %s\n", CONF_BOOL_STR(c->NoHomeReturn));
 		if (c->MoveModulePath)
 			dbg("MoveModulePath = %s\n", c->MoveModulePath);
@@ -425,7 +425,7 @@ void conf_show(struct mip6_config *c)
 		dbg("HaMaxBindingLife = %u\n", c->HaMaxBindingLife);
 		dbg("SendMobPfxAdvs = %s\n", CONF_BOOL_STR(c->SendMobPfxAdvs));
 		dbg("SendUnsolMobPfxAdvs = %s\n",
-		    CONF_BOOL_STR(c->SendUnsolMobPfxAdvs));
+			CONF_BOOL_STR(c->SendUnsolMobPfxAdvs));
 		dbg("MinMobPfxAdvInterval = %u\n", c->MinMobPfxAdvInterval);
 		dbg("MaxMobPfxAdvInterval = %u\n", c->MaxMobPfxAdvInterval);
 		dbg("HaAcceptMobRtr = %s\n", CONF_BOOL_STR(c->HaAcceptMobRtr));
@@ -437,19 +437,19 @@ void conf_show(struct mip6_config *c)
 				struct prefix_list_entry *pfx;
 				pfx = list_entry(list, struct prefix_list_entry, list);
 				dbg("- %x:%x:%x:%x:%x:%x:%x:%x/%d\n",
-				    NIP6ADDR(&pfx->ple_prefix), pfx->ple_plen);
+					NIP6ADDR(&pfx->ple_prefix), pfx->ple_plen);
 			}
 		}
 		dbg("DefaultBindingAclPolicy = %s\n",
-		    (c->DefaultBindingAclPolicy  == IP6_MH_BAS_ACCEPTED) ?
-		     "allow":"deny");
+			(c->DefaultBindingAclPolicy  == IP6_MH_BAS_ACCEPTED) ?
+			"allow":"deny");
 		list_for_each(list, &c->bind_acl) {
 			struct policy_bind_acl_entry *acl;
 			acl = list_entry(list, struct policy_bind_acl_entry, list);
 			dbg("- HoA %x:%x:%x:%x:%x:%x:%x:%x (%d MNP): %s\n",
-			    NIP6ADDR(&acl->hoa), acl->mnp_count,
-			    (acl->bind_policy == IP6_MH_BAS_ACCEPTED) ?
-			    "allow":"deny");
+				NIP6ADDR(&acl->hoa), acl->mnp_count,
+				(acl->bind_policy == IP6_MH_BAS_ACCEPTED) ?
+				"allow":"deny");
 		}
 
 		/* PMIPv6 LMA options */
@@ -542,30 +542,36 @@ void conf_show(struct mip6_config *c)
 
 		dbg("RadiusClientConfigFile = %s\n",
 			(c->RadiusClientConfigFile ?
-			 c->RadiusClientConfigFile : "No Config file"));
+				c->RadiusClientConfigFile : "No Config file"));
 		dbg("RadiusPassword = %s\n",
 			(c->RadiusPassword ? c->RadiusPassword : "No password"));
 
 		dbg("PcapSyslogAssociationGrepString = %s\n",
 			(c->PcapSyslogAssociationGrepString ?
-			 c->PcapSyslogAssociationGrepString :
-			 "No syslog association grep string"));
+				c->PcapSyslogAssociationGrepString :
+				"No syslog association grep string"));
 		dbg("PcapSyslogDeAssociationGrepString = %s\n",
 			(c->PcapSyslogDeAssociationGrepString ?
-			 c->PcapSyslogDeAssociationGrepString :
-			 "No syslog de-association grep string"));
+				c->PcapSyslogDeAssociationGrepString :
+				"No syslog de-association grep string"));
 #ifdef USE_ODTONE
-        char str[INET_ADDRSTRLEN];
-        inet_ntop( AF_INET, &c->MIHFIPAddress,str, INET_ADDRSTRLEN);
+		char str[INET_ADDRSTRLEN];
+		inet_ntop( AF_INET, &c->MIHFIPAddress,str, INET_ADDRSTRLEN);
 		dbg("Printing MIHF communication configurations\n");
 		//dbg("Link Mac address = %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&c->LinkMacAddress));
 		dbg("Link Mac address = %02x:%02x:%02x:%02x:%02x:%02x\n", c->LinkMacAddress[0],c->LinkMacAddress[1],
-														c->LinkMacAddress[2],c->LinkMacAddress[3],
-														c->LinkMacAddress[4],c->LinkMacAddress[5]);
+			c->LinkMacAddress[2],c->LinkMacAddress[3],
+			c->LinkMacAddress[4],c->LinkMacAddress[5]);
 		dbg("MIHF IP address: %s\n",str);
 		dbg("MIHF client User name: %s\n", c->MIHFClientUserName );
 		dbg("MIHF ID: %s\n", c->MIHF_ID );
-        dbg("MIHF UDP PORT: %d\n", c->MIHFPort);
+		dbg("MIHF UDP PORT: %d\n", c->MIHFPort);
+#endif
+
+#ifdef ENABLE_FLOW_MOBILITY
+		dbg("Printing Flow mob configurations\n");
+		dbg("Netfilter usespace queue number: %d\n", c->UserSpacePacketsQueue);
+
 #endif
 
 		break;
@@ -629,46 +635,46 @@ void conf_free(struct mip6_config *c)
 }
 
 int conf_update(struct mip6_config *c,
-		void (*apply_changes_cb)(struct mip6_config *,
-					 struct mip6_config *))
+	void (*apply_changes_cb)(struct mip6_config *,
+		struct mip6_config *))
 {
 	/* c is a pointer to the current config.
 	 * We want to update some data from c according
 	 * to the changed configuration file. */
-	struct mip6_config *conf_new = NULL;
-	int ret = 0;
+	 struct mip6_config *conf_new = NULL;
+	 int ret = 0;
 
-	conf_new = malloc(sizeof(*conf_new));
-	if (!conf_new) {
-		perror("conf_update");
-		return -1;
-	}
+	 conf_new = malloc(sizeof(*conf_new));
+	 if (!conf_new) {
+	 	perror("conf_update");
+	 	return -1;
+	 }
 
-	conf_default(conf_new);
+	 conf_default(conf_new);
 
 	/* gram.y stores configuration items in conf_parsed,
 	 * so point it to conf_new */
-	conf_parsed = conf_new;
+	 conf_parsed = conf_new;
 
-	if ((ret = conf_file(conf_new, c->config_file)) < 0) {
-		dbg("Error in the new configuration file, "
-		    "changes not applied\n");
-	}
+	 if ((ret = conf_file(conf_new, c->config_file)) < 0) {
+	 	dbg("Error in the new configuration file, "
+	 		"changes not applied\n");
+	 }
 
 	/* Make conf_parsed point back to the original config */
-	conf_parsed = c;
+	 conf_parsed = c;
 
 	/* We now have the new config in conf_new, we can compute
 	 * the differences that we are interrested in */
-	if (!ret) {
-		apply_changes_cb(c, conf_new);
-	}
+	 if (!ret) {
+	 	apply_changes_cb(c, conf_new);
+	 }
 
 	/* Free the memory allocated during the process.
 	 * conf_free() does not free conf_new so we free it
 	 * by ourselves */
-	conf_free(conf_new);
-	free(conf_new);
+	 conf_free(conf_new);
+	 free(conf_new);
 
-	return ret;
-}
+	 return ret;
+	}
