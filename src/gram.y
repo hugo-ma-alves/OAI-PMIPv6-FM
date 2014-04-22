@@ -205,6 +205,12 @@ static void uerror(const char *fmt, ...) {
 %token		HASERVEDPREFIX
 %token		MOBRTRUSEEXPLICITMODE
 %token		CNBINDINGPOLICYSET
+
+/*VT CONF ELEMENTS*/
+%token		VTHOSTNAME;
+%token		VTSERVICE;
+
+
 /* PMIP CONF ELEMENTS */
 %token		RFC5213TIMESTAMPBASEDAPPROACHINUSE;
 %token		RFC5213MOBILENODEGENERATEDTIMESTAMPINUSE;
@@ -437,6 +443,18 @@ topdef		: MIP6ENTITY mip6entity ';'
 		| NOHOMERETURN BOOL ';'
 		{
 			conf_parsed->NoHomeReturn = $2;
+		}
+		| VTHOSTNAME QSTRING ';'
+		{	
+			#ifdef ENABLE_VT
+			conf_parsed->vt_hostname = $2;
+			#endif
+		}
+		| VTSERVICE QSTRING ';'
+		{
+			#ifdef ENABLE_VT
+			conf_parsed->vt_service = $2;
+			#endif
 		}
 		| CNBINDINGPOLICYSET  '{' cnbindingpoldefs '}'
 		| PROXYMIPLMA proxymiplmadef

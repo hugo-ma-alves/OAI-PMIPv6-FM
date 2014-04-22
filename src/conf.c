@@ -201,8 +201,12 @@
 
 	/* Common options */
 #ifdef ENABLE_VT
- 	c->vt_hostname = VT_DEFAULT_HOSTNAME;
- 	c->vt_service = VT_DEFAULT_SERVICE;
+ 	if(c->vt_hostname==NULL){
+ 		c->vt_hostname = VT_DEFAULT_HOSTNAME;
+ 	}
+ 	if(c->vt_service==NULL){
+ 		c->vt_service = VT_DEFAULT_SERVICE;
+ 	}
 #endif
  	c->mip6_entity = MIP6_ENTITY_CN;
  	pmgr_init(NULL, &c->pmgr);
@@ -377,6 +381,12 @@ void conf_show(struct mip6_config *c)
 	dbg("KeyMngMobCapability = %s\n",
 		CONF_BOOL_STR(c->KeyMngMobCapability));
 	dbg("UseMnHaIPsec = %s\n", CONF_BOOL_STR(c->UseMnHaIPsec));
+
+	/*VT termninal options*/
+#ifdef ENABLE_VT
+	dbg("VT Hostname %s\n", c->vt_hostname);
+	dbg("VT Port: %s\n", c->vt_service);
+#endif
 
 	switch (c->mip6_entity) {
 		case MIP6_ENTITY_MN:

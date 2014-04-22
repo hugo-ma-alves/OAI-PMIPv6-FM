@@ -289,6 +289,8 @@ Interface			{ return INTERFACE; }
 IfName				{ return IFNAME; }
 IfType				{ return IFTYPE; }
 MnIfPreference			{ return MNIFPREFERENCE; }
+VTHostname				{ return VTHOSTNAME; }
+VTService					{ return VTSERVICE; }
 Tunnel                          { return ISTUNNEL; }
 MnUseAllInterfaces     		{ return MNUSEALLINTERFACES; }
 MnRouterProbes			{ return MNROUTERPROBES; }
