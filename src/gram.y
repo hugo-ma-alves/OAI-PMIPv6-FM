@@ -205,6 +205,12 @@ static void uerror(const char *fmt, ...) {
 %token		HASERVEDPREFIX
 %token		MOBRTRUSEEXPLICITMODE
 %token		CNBINDINGPOLICYSET
+
+/*VT CONF ELEMENTS*/
+%token		VTHOSTNAME;
+%token		VTSERVICE;
+
+
 /* PMIP CONF ELEMENTS */
 %token		RFC5213TIMESTAMPBASEDAPPROACHINUSE;
 %token		RFC5213MOBILENODEGENERATEDTIMESTAMPINUSE;
@@ -225,6 +231,8 @@ static void uerror(const char *fmt, ...) {
 %token		LMACORENETWORKDEVICE
 %token		MAGADDRESSINGRESS
 %token		MAGADDRESSEGRESS
+%token 		MAGROUTINGPACKETSMARK
+%token		MAGROUTINGLOOKUPTABLE
 %token		MAGDEVICEINGRESS
 %token		MAGDEVICEEGRESS
 %token		OURADDRESS
@@ -437,6 +445,18 @@ topdef		: MIP6ENTITY mip6entity ';'
 		| NOHOMERETURN BOOL ';'
 		{
 			conf_parsed->NoHomeReturn = $2;
+		}
+		| VTHOSTNAME QSTRING ';'
+		{	
+			#ifdef ENABLE_VT
+			conf_parsed->vt_hostname = $2;
+			#endif
+		}
+		| VTSERVICE QSTRING ';'
+		{
+			#ifdef ENABLE_VT
+			conf_parsed->vt_service = $2;
+			#endif
 		}
 		| CNBINDINGPOLICYSET  '{' cnbindingpoldefs '}'
 		| PROXYMIPLMA proxymiplmadef
@@ -1018,6 +1038,14 @@ proxymiplmaopt	: LMAPMIPNETWORKADDRESS ADDR ';'
 		| MAGADDRESSINGRESS ADDR ';'
 		{
 			memcpy(&conf_parsed->MagAddressIngress[conf_parsed->NumMags], &$2, sizeof(struct in6_addr));
+		}
+		| MAGROUTINGPACKETSMARK NUMBER ';'
+		{
+			conf.MagRoutingMark[conf_parsed->NumMags] = $2;
+		}
+		| MAGROUTINGLOOKUPTABLE NUMBER ';'
+		{
+			conf.MAGRoutingLookupTable[conf_parsed->NumMags] = $2;
 		}
 		| MAGADDRESSEGRESS ADDR ';'
 		{

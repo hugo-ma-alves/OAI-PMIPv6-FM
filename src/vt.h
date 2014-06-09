@@ -79,6 +79,10 @@ int vt_bc_init(void);
 
 int vt_pbc_init(void);
 
+int vt_fmbc_init(void);
+
+int vt_client_route_init(void);
+
 int vt_init(void);
 void vt_fini(void);
 

@@ -88,6 +88,9 @@ struct mip6_config {
 	#define PMIP_MAX_MAGS    64
 	struct in6_addr MagAddressIngress[PMIP_MAX_MAGS]; // ingress address of MAG.
 	struct in6_addr MagAddressEgress[PMIP_MAX_MAGS];  // egress address of MAG.
+	uint32_t 		MagRoutingMark[PMIP_MAX_MAGS];  // Routing mark of the MAG.
+	uint32_t		MAGRoutingLookupTable[PMIP_MAX_MAGS]; //Number of the routing table for each MAG.
+
 	char*           MagDeviceIngress;           // ingress device.
 	char*           MagDeviceEgress;            // egress device.
 	struct in6_addr OurAddress;

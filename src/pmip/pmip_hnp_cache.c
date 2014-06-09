@@ -59,6 +59,8 @@ static int 					g_mn_count = 0;
 #	define CACHE_RADIUS
 #	define RADIUS_MSG_MAX_SIZE      4096
 #	define RADIUS_USERNAME_MAX_SIZE 256
+/*TLV for RADIUS Support for Proxy Mobile IPv6 (RFC6572)*/ 
+#   define Mobile_Node_Identifier  145 /*octets*/
 /*! \var rc_handle*			g_rh
 \brief Handle on free radius client.
 */
@@ -126,7 +128,7 @@ struct in6_addr EUI48_to_EUI64(struct in6_addr macaddr)
 	return iid;
 }
 //-----------------------------------------------------------------------------
-void pmip_insert_into_hnp_cache(struct in6_addr mn_iid, struct in6_addr addr)
+void pmip_insert_into_hnp_cache(struct in6_addr mn_iid, struct in6_addr addr,ip6mn_nai_t nai)
 {
     int j = 0;
     while (j < g_mn_count) {
@@ -140,6 +142,7 @@ void pmip_insert_into_hnp_cache(struct in6_addr mn_iid, struct in6_addr addr)
     if (g_mn_count < MAX_MOBILES) {
         g_mn_hn_map[g_mn_count].mn_prefix = addr;
         g_mn_hn_map[g_mn_count].mn_iid = mn_iid;
+        g_mn_hn_map[g_mn_count].mn_nai = nai;
         dbg("new entry in cache %x:%x:%x:%x:%x:%x:%x:%x -> %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&g_mn_hn_map[g_mn_count].mn_prefix), NIP6ADDR(&g_mn_hn_map[g_mn_count].mn_iid));
         g_mn_count = g_mn_count + 1;
     } else {
@@ -155,7 +158,7 @@ void pmip_lma_mn_to_hnp_cache_init(void)
 struct in6_addr lma_mnid_hnp_map(struct in6_addr mnid, int *result)
 {
     int j = 0;
-    dbg("Entering the address match . . ");
+    dbg("Entering the address match ... \n");
     dbg("Searching for MNID  %x:%x:%x:%x:%x:%x:%x:%x  \n", NIP6ADDR(&mnid));
     while (j < g_mn_count) {
         dbg("Comparing with MNID  %x:%x:%x:%x:%x:%x:%x:%x  \n", NIP6ADDR(&g_mn_hn_map[j].mn_iid));
@@ -175,10 +178,31 @@ struct in6_addr lma_mnid_hnp_map(struct in6_addr mnid, int *result)
 }
 //-----------------------------------------------------------------------------
 
+ ip6mn_nai_t mn_nai_hnp_map(struct in6_addr mnid, int *result)
+{
+    int j = 0;
+    dbg("Entering the address match ... \n");
+    dbg("Searching for MNID  %x:%x:%x:%x:%x:%x:%x:%x  \n", NIP6ADDR(&mnid));
+    while (j < g_mn_count) {
+        dbg("Comparing with MNID  %x:%x:%x:%x:%x:%x:%x:%x  \n", NIP6ADDR(&g_mn_hn_map[j].mn_iid));
+        if (IN6_ARE_ADDR_EQUAL(&g_mn_hn_map[j].mn_iid, &mnid)) {
+            dbg("Found the nai\n");
+            *result = 1;
+            return (g_mn_hn_map[j].mn_nai);
+        }
+        j++;
+    }
+    dbg("mnid not found \n");
+
+     ip6mn_nai_t tmp;
+    memset(&tmp, 0, sizeof( ip6mn_nai_t));
+    *result = -1;
+    return tmp;
+}
+
 #ifdef USE_RADIUS
 int pmip_mn_to_hnp_cache_init(void)
 {
-    dbg ("\n");
     memset(g_mn_hn_map, 0, sizeof(mnid_hnp_t) * MAX_MOBILES);
     rc_openlog("pmip_radius_client");
     if ((g_rh = rc_read_config(conf.RadiusClientConfigFile)) == NULL) {
@@ -264,9 +288,10 @@ int pmip_mn_to_hnp_cache_init (void)
 /*!
 *  Search if the mobile node id is already associated with a prefix in the hnp map
 * \param mnid Mobile node ID
+* \param mn_nai[out] Returns the Mobile node identifier in NAI format
 * \return a valid prefix if the mobile node id is already associated with a prefix in the hnp map
 */
-struct in6_addr mnid_hnp_map(struct in6_addr mnid, int *aaa_result)
+struct in6_addr mnid_hnp_map(struct in6_addr mnid, ip6mn_nai_t *mn_nai  , int *aaa_result)
 {
     //int l_flag = 0;
 #if !defined (USE_RADIUS) || defined(CACHE_RADIUS)
@@ -353,13 +378,31 @@ struct in6_addr mnid_hnp_map(struct in6_addr mnid, int *aaa_result)
                             prefix.s6_addr[8 + i] = prefix.s6_addr[8 + i] | vp->strvalue[i];
                         }
                     }
+                    if ((vp = rc_avpair_get(received, Mobile_Node_Identifier, 0)) != NULL) {
+                        *aaa_result += 1;
+                        int size;
+                        size = vp->lvalue;
+                        if(size > sizeof(ip6mn_nai_t)){
+                            size = sizeof(ip6mn_nai_t);
+                            dbg("MN NAI truncated, MAX value is 63 bytes\n");
+                        }
+                        dbg("MN NAI SIZE AFTER RADIUS %d\n",size);
+                        memcpy(mn_nai,vp->strvalue, size);
+                                                
+                    }
                     rc_avpair_free(received);
                 }
                 if (*aaa_result >= 2) {
                     //l_flag = 1;
-                    dbg("[RADIUS] Assigned IPv6 @ for MN UID %x:%x:%x:%x:%x:%x:%x:%x <=> %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&mnid), NIP6ADDR(&prefix));
+                    int naiSize = sizeof(ip6mn_nai_t);
+                    char nai[naiSize+1];
+                    nai[naiSize]='\0';
+                    memcpy(&nai,mn_nai,naiSize);
+                    dbg("[RADIUS] NAI SIZE:%d\n",naiSize);
+                    dbg("[RADIUS] Received prefix for MN with NAI:%s\n",nai);
+                    dbg("[RADIUS] Previous NAI Assigned IPv6 @ for MN UID %x:%x:%x:%x:%x:%x:%x:%x <=> %x:%x:%x:%x:%x:%x:%x:%x\n",NIP6ADDR(&mnid), NIP6ADDR(&prefix));
                     dbg("[RADIUS] \"%s\" Authentication OK\n", g_username);
-                    pmip_insert_into_hnp_cache(mnid, prefix);
+                    pmip_insert_into_hnp_cache(mnid, prefix, *mn_nai);
                     return prefix;
                 }
             }

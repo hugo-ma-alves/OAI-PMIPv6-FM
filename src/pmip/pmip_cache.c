@@ -41,8 +41,9 @@
 #include "debug.h"
 #include "conf.h"
 //---------------------------------------------------------------------------------------------------------------------
-static struct hash      g_pmip_hash;
+static struct pmip_hash      g_pmip_hash;
 static int              g_pmip_cache_count = 0;
+static int                   last_BID=0;
 //---------------------------------------------------------------------------------------------------------------------
 int get_pmip_cache_count(int type)
 {
@@ -59,14 +60,15 @@ void dump_pbce(void *bce, void *os)
     fprintf(out, " == Proxy Binding Cache entry ");
     switch (e->type) {
         case BCE_PMIP:
-            fprintf(out, "(BCE_PMIP)\n");
-            break;
+        fprintf(out, "(BCE_PMIP)\n");
+        break;
         case BCE_TEMP:
-            fprintf(out, "(BCE_TEMP)\n");
-            break;
+        fprintf(out, "(BCE_TEMP)\n");
+        break;
         default:
-            fprintf(out, "(Unknown)\n");
+        fprintf(out, "(Unknown)\n");
     }
+    fprintf(out, " BID:                    %d\n", e->BID);
     fprintf(out, " MN IID:                 %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&e->mn_suffix));
     fprintf(out, " MN HW Address:          %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&e->mn_hw_address));
     fprintf(out, " MN Serving MAG Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&e->mn_serv_mag_addr));
@@ -88,7 +90,7 @@ int pmip_cache_init(void)
         dbg("pthread_rwlock_wrlock(&pmip_lock) %s\n", strerror(mutex_return_code));
     }
 
-    ret = hash_init(&g_pmip_hash, DOUBLE_ADDR, PMIP_CACHE_BUCKETS);
+    ret = pmip_hash_init(&g_pmip_hash, PMIP_CACHE_BUCKETS);
 
     mutex_return_code = pthread_rwlock_unlock(&pmip_lock);
     if (mutex_return_code != 0) {
@@ -153,12 +155,16 @@ pmip_entry_t *pmip_cache_alloc(int type)
 static int __pmipcache_insert(pmip_entry_t * bce)
 {
     int ret;
-    ret = hash_add(&g_pmip_hash, bce, &bce->our_addr, &bce->mn_hw_address);
+    ret = pmip_hash_add(&g_pmip_hash, bce, &bce->mn_nai, &bce->mn_serv_mag_addr);
     if (ret) {
         return ret;
     }
     g_pmip_cache_count++;
-    dbg("PMIP cache entry is inserted for: %x:%x:%x:%x:%x:%x:%x:%x <-> %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->our_addr), NIP6ADDR(&bce->mn_hw_address));
+
+    dbg("PMIP cache entry is inserted for: ");
+    dbg_buf_string(&bce->mn_nai.nai, sizeof(ip6mn_nai_t));
+    dbg(" <=> %x:%x:%x:%x:%x:%x:%x:%x\n",  NIP6ADDR(&bce->mn_serv_mag_addr));
+
     return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
@@ -180,6 +186,9 @@ pmip_entry_t *pmip_cache_add(pmip_entry_t * bce)
     assert(bce);
     bce->unreach = 0;
     mutex_return_code = pthread_rwlock_wrlock(&pmip_lock);
+    bce->BID=last_BID;
+    last_BID++;
+
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_wrlock(&pmip_lock) %s\n", strerror(mutex_return_code));
     }
@@ -202,17 +211,17 @@ pmip_entry_t *pmip_cache_add(pmip_entry_t * bce)
     return bce;
 }
 //---------------------------------------------------------------------------------------------------------------------
-pmip_entry_t *pmip_cache_get(const struct in6_addr * our_addr, const struct in6_addr * peer_addr)
+pmip_entry_t *pmip_cache_get(const  ip6mn_nai_t *mn_nai, const struct in6_addr *mag_addr)
 {
     pmip_entry_t *bce;
     int mutex_return_code;
 
-    assert(peer_addr && our_addr);
+    assert(mn_nai && mag_addr);
     mutex_return_code = pthread_rwlock_rdlock(&pmip_lock);
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_rdlock(&pmip_lock) %s\n", strerror(mutex_return_code));
     }
-    bce = hash_get(&g_pmip_hash, our_addr, peer_addr);
+    bce = pmip_hash_get(&g_pmip_hash, mn_nai, mag_addr);
     if (bce) {
         mutex_return_code = pthread_rwlock_wrlock(&bce->lock);
         if (mutex_return_code != 0) {
@@ -224,10 +233,12 @@ pmip_entry_t *pmip_cache_get(const struct in6_addr * our_addr, const struct in6_
         if (mutex_return_code != 0) {
             dbg("pthread_rwlock_unlock(&pmip_lock) %s\n", strerror(mutex_return_code));
         }
-        dbg("PMIP cache entry is NOT found for %x:%x:%x:%x:%x:%x:%x:%x <-> %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(our_addr), NIP6ADDR(peer_addr));
+
+        dbg("PMIP cache entry is NOT found for %x:%x:%x:%x:%x:%x:%x:%x\n",  NIP6ADDR(mag_addr));
     }
     return bce;
 }
+
 //---------------------------------------------------------------------------------------------------------------------
 void pmipcache_release_entry(pmip_entry_t * bce)
 {
@@ -243,12 +254,15 @@ void pmipcache_release_entry(pmip_entry_t * bce)
     }
 }
 //---------------------------------------------------------------------------------------------------------------------
-int pmip_cache_exists(const struct in6_addr *our_addr, const struct in6_addr *peer_addr)
+int pmip_cache_exists(const  ip6mn_nai_t *mn_nai, const struct in6_addr *mag_addr)
 {
     pmip_entry_t *bce;
     int type;
-    bce = pmip_cache_get(our_addr, peer_addr);
+    bce = pmip_cache_get(mn_nai, mag_addr);
     if (bce == NULL) {
+        dbg("PMIP cache wasn't found for: ");
+        dbg_buf_string(&mn_nai->nai, sizeof(ip6mn_nai_t));
+        dbg(" <=> %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(mag_addr));
         return -1;
     }
     dbg("PMIP cache entry does exist with type: %d\n", (bce->type));
@@ -283,7 +297,7 @@ void pmip_bce_delete(pmip_entry_t * bce)
         bce->cleanup(bce);
     }
     g_pmip_cache_count--;
-    hash_delete(&g_pmip_hash, &bce->our_addr, &bce->mn_hw_address);
+    pmip_hash_delete(&g_pmip_hash, &bce->mn_nai, &bce->mn_serv_mag_addr);
     mutex_return_code = pthread_rwlock_unlock(&bce->lock);
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_unlock(&bce->lock) %s\n", strerror(mutex_return_code));
@@ -292,7 +306,7 @@ void pmip_bce_delete(pmip_entry_t * bce)
     dbg("PMIP cache entry is deleted!\n");
 }
 //---------------------------------------------------------------------------------------------------------------------
-void pmip_cache_delete(const struct in6_addr *our_addr, const struct in6_addr *peer_addr)
+void pmip_cache_delete(const  ip6mn_nai_t *mn_nai, const struct in6_addr *mag_addr)
 {
     int mutex_return_code;
     pmip_entry_t *bce;
@@ -300,7 +314,7 @@ void pmip_cache_delete(const struct in6_addr *our_addr, const struct in6_addr *p
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_wrlock(&pmip_lock) %s\n", strerror(mutex_return_code));
     }
-    bce = hash_get(&g_pmip_hash, our_addr, peer_addr);
+    bce = pmip_hash_get(&g_pmip_hash, mn_nai, mag_addr);
     if (bce) {
         pmip_bce_delete(bce);
     }
@@ -318,7 +332,7 @@ int pmip_cache_iterate(int (*func) (void *, void *), void *arg)
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_rdlock(&pmip_lock) %s\n", strerror(mutex_return_code));
     }
-    err = hash_iterate(&g_pmip_hash, func, arg);
+    err = pmip_hash_iterate(&g_pmip_hash, func, arg);
     mutex_return_code = pthread_rwlock_unlock(&pmip_lock);
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_unlock(&pmip_lock) %s\n", strerror(mutex_return_code));

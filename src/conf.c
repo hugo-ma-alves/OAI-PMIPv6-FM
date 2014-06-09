@@ -201,8 +201,12 @@
 
 	/* Common options */
 #ifdef ENABLE_VT
- 	c->vt_hostname = VT_DEFAULT_HOSTNAME;
- 	c->vt_service = VT_DEFAULT_SERVICE;
+ 	if(c->vt_hostname==NULL){
+ 		c->vt_hostname = VT_DEFAULT_HOSTNAME;
+ 	}
+ 	if(c->vt_service==NULL){
+ 		c->vt_service = VT_DEFAULT_SERVICE;
+ 	}
 #endif
  	c->mip6_entity = MIP6_ENTITY_CN;
  	pmgr_init(NULL, &c->pmgr);
@@ -378,6 +382,7 @@ void conf_show(struct mip6_config *c)
 		CONF_BOOL_STR(c->KeyMngMobCapability));
 	dbg("UseMnHaIPsec = %s\n", CONF_BOOL_STR(c->UseMnHaIPsec));
 
+
 	switch (c->mip6_entity) {
 		case MIP6_ENTITY_MN:
 		/* MN options */
@@ -493,7 +498,18 @@ void conf_show(struct mip6_config *c)
 				NIP6ADDR(&c->MagAddressIngress[i]));
 			dbg("- MagAddressEgress = %x:%x:%x:%x:%x:%x:%x:%x\n",
 				NIP6ADDR(&c->MagAddressEgress[i]));
+			dbg("Mark for flow routing: %d\n",c->MagRoutingMark[i]);
+			dbg("Number of Routing table: %d\n",c->MAGRoutingLookupTable[i]);
+
 		}
+
+
+#ifdef ENABLE_FLOW_MOBILITY
+		dbg("Printing Flow mob configurations\n");
+		dbg("Netfilter usespace queue number: %d\n", c->UserSpacePacketsQueue);
+
+#endif
+		
 		break;
 
 		case MIP6_ENTITY_MAG:
@@ -566,12 +582,6 @@ void conf_show(struct mip6_config *c)
 		dbg("MIHF client User name: %s\n", c->MIHFClientUserName );
 		dbg("MIHF ID: %s\n", c->MIHF_ID );
 		dbg("MIHF UDP PORT: %d\n", c->MIHFPort);
-#endif
-
-#ifdef ENABLE_FLOW_MOBILITY
-		dbg("Printing Flow mob configurations\n");
-		dbg("Netfilter usespace queue number: %d\n", c->UserSpacePacketsQueue);
-
 #endif
 
 		break;

@@ -17,6 +17,11 @@
 #define IP6_RULE_PRIO_PMIP6_FWD   1000
 ///////////////////////////////////////////
 
+// Defined for Proxy FMPMIPv6//////////////////
+#define IP6_RULE_PRIO_FMPMIP6_MARK_RULES   		32800
+#define IP6_RULE_PRIO_FMPMIP6_MAG_ROUTE_TABLE  	1024
+///////////////////////////////////////////
+
 #define IP6_RT_PRIO_MIP6_OUT 128
 #define IP6_RT_PRIO_MIP6_FWD 192
 #define IP6_RT_PRIO_ADDRCONF 256

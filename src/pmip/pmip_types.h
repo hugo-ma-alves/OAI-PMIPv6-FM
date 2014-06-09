@@ -41,6 +41,8 @@
 #    include "mh.h"
 //---------------------------------------------------------------------------------------------------------------------
 
+
+#define  NAI_SIZE 63
 /*
 * Mobility Option TLV data structure
 *New options defined for Proxy BU & BA
@@ -67,6 +69,14 @@ typedef struct {
     __u32       second;
 } ip6mnid_t;
 
+typedef struct {
+     char nai[NAI_SIZE];
+} ip6mn_nai_t;
+
+/*typedef struct {
+     char *nai;
+     int size;
+} ip6mn_nai_tt;*/
 
 /*! \struct  ip6ts_t
 * \brief Timestamp structure.
@@ -84,7 +94,7 @@ struct ip6_mh_opt_mobile_node_identifier_t {
     __u8                ip6mnid_type;   /*!< \brief MN-ID-OPTION-TYPE has been assigned value 8 by the IANA. It is an  8-bit identifier of the type mobility option.*/
     __u8                ip6mnid_len;    /*!< \brief 8-bit unsigned integer, representing the length in octets of the Subtype and Identifier fields.*/
     __u8                ip6mnid_subtype;/*!< \brief Mobile interface identifier subtype .*/
-    ip6mnid_t           ip6mnid_id;     /*!< \brief Mobile interface identifier (NOT RFC4283).*/
+    ip6mn_nai_t           ip6mnid_id;     /*!< \brief Mobile interface identifier (NOT RFC4283).*/
 } __attribute__ ((__packed__));
 typedef struct ip6_mh_opt_mobile_node_identifier_t ip6_mh_opt_mobile_node_identifier_t;
 
@@ -196,6 +206,7 @@ typedef struct msg_info_t {
     int                         iif;                /*!< \brief Interface identifier.*/
     uint32_t                    msg_event;          /*!< \brief Type of event received: hasDEREG hasWLCCP hasRS hasNA hasNS hasPBU hasPBA hasPBREQ hasPBRES */
     struct in6_addr             mn_iid;             /*!< \brief Mobile node IID.*/
+    ip6mn_nai_t                 mn_nai;
     struct in6_addr             mn_addr;            /*!< \brief Full mobile node address */
     struct in6_addr             mn_prefix;          /*!< \brief Network Address Prefix for MN */
     struct in6_addr             mn_serv_mag_addr;   /*!< \brief Serving MAG Address */

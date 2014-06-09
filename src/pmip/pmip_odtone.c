@@ -1,10 +1,9 @@
+#define PMIP_ODTONE_C
 #define PMIP
 
 #ifdef HAVE_CONFIG_H
 #       include <config.h>
 #endif
-#include <string.h>
-#include <ctype.h>
 //---------------------------------------------------------------------------------------------------------------------
 #include "pmip_fsm.h"
 #include "pmip_hnp_cache.h"
@@ -21,13 +20,15 @@
 #include "MIHC_Interface/MIH_C_Link_Primitives.h"
 
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 
+#include "pmip_mag_proc.h"
+#include "pmip_hnp_cache.h"
+
+static void msg_handler_associate(unsigned char * mn_iidP);
+static void msg_handler_deassociate(unsigned char * mn_iidP);
+static ip6mn_nai_t get_node_nai(struct in6_addr mn_iid );
 
 static pthread_t socket_listener;
 int  sock;
@@ -93,6 +94,7 @@ int start_MIHF_socket(void)
     bzero(&(mihf_socket.sin_zero),8);
 
     sockaddr_len = sizeof(struct sockaddr_in);
+    dbg ("Opened UDP socket to MIHF \n");
 
     return sock;
 }
@@ -108,29 +110,29 @@ int send_to_mih(char * str, int prim_length)
 }
 
 
-int check_if_cap_discovery_matches_conffile_listenInterface(char*str, int index)
+int check_if_cap_discovery_matches_conffile_listenInterface(char *str, int index)
 {
 
     unsigned char  mac[6];
 
-    int addrLength=0;
+    //int addrLength=0;
     int numberOfElemets=0;
     index++; //list lenght
-    addrLength=str[index];  //size of payload
+    //addrLength=str[index];  //size of payload
     ++index;
     numberOfElemets=str[index]; //number of links in list
 
     do
     {
-        index+=9; //advance to first link address
-        mac[0]=str[index];
-        dbg("Found Link sap number %d:\n",numberOfElemets);
+        index+=9; //advance to first/next link address
+        //mac[0]=str[index];
+        //dbg("Found Link sap number %d:\n",numberOfElemets);
         memcpy(mac, &str[index],6);
 
-        debug_print_buffer(mac ,6, "decodeLinkList"," Received Link:");
+        //debug_print_buffer(mac ,6, "decodeLinkList"," Received Link:");
         index = index+5;
 
-        if(strcmp(mac, conf.LinkMacAddress)==0)
+        if(memcmp(mac, conf.LinkMacAddress, 6)==0)
         {
             return 1;
         }
@@ -149,8 +151,8 @@ int decode_capability_discover_response(char* str)
     uint16_t payload_length=0;
 
     dbg("Decoding capability discover response\n");
-    dbg("The package HEX DUMP, for debugging purposes:\n");
-    debug_print_buffer(str,MIHLink_MAX_LENGTH,"decode_capability_discover_response","Buffer received from MIHF");
+    //dbg("The package HEX DUMP, for debugging purposes:\n");
+    //debug_print_buffer(str,MIHLink_MAX_LENGTH,"decode_capability_discover_response","Buffer received from MIHF");
 
     payload_length=  str[6]<<8 | str[7]; //Advance to header payload length
     i=sizeof(MIH_C_Header);// start in first TLV
@@ -178,7 +180,7 @@ int decode_capability_discover_response(char* str)
 
     }
 
-    dbg("Error parsing capability discover responde - Link address list not found");
+    dbg("Error parsing capability discover response - Link address list not found\n");
     return -1;
 }
 
@@ -189,8 +191,8 @@ int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
     uint8_t addressSize=0;
 
     dbg("Decoding Link event indication\n");
-    dbg("The package HEX DUMP, for debugging purposes:\n");
-    debug_print_buffer(str,MIHLink_MAX_LENGTH,"decode_link_event_indication","Buffer received from MIHF");
+    //dbg("The package HEX DUMP, for debugging purposes:\n");
+   // debug_print_buffer(str,MIHLink_MAX_LENGTH,"decode_link_event_indication","Buffer received from MIHF");
 
     payload_length=  str[6]<<8 | str[7]; //Advance to header payload length
     i=sizeof(MIH_C_Header);// start in first TLV
@@ -230,7 +232,7 @@ int decode_link_event_indication(char* str , unsigned char ** mobileNode_mac )
 
 //-----------------------------------------------------------------------------
 // Process incoming messages from MIHF
-int process_incoming_message(void)
+void* process_incoming_message(__attribute__ ((unused)) void *arg)
 {
 
     dbg("Starting incoming MIHF messages listener....\n");
@@ -250,12 +252,13 @@ int process_incoming_message(void)
         n = recvfrom(sock, (void *)str, MIHLink_MAX_LENGTH, 0, (struct sockaddr *) &mihf_socket, &sockaddr_len);
 
         ODTONE_Header = (MIH_C_Header *) str;
-        dbg("Received message from MIHF\n");
+        dbg("Received message from MIHF with %d bytes\n",n);
         dbg("It's ID is %d \n",ODTONE_Header->Message_ID);
 
         switch(ODTONE_Header->Message_ID)
         {
         case MIH_LINK_HEADER_3_Cap_Disc_Conf:
+            dbg("Received capability discover confirmation\n");
             if(decode_capability_discover_response(str))
             {
                 send_event_subscribe_request();
@@ -268,14 +271,14 @@ int process_incoming_message(void)
         case MIH_SERVICE_INDICATION_LINK_UP:
             dbg("Received Link UP Indication\n");
              addrSize = decode_link_event_indication(str, &macaddress);
-            debug_print_buffer(macaddress ,addrSize, "Received LINK UP FROM"," LINK UP");
+            //debug_print_buffer(macaddress ,addrSize, "Received LINK UP FROM"," LINK UP");
             msg_handler_associate(macaddress);
             free(macaddress);
             break;
         case MIH_SERVICE_INDICATION_LINK_DOWN:
             dbg("Received Link DOWN Indication\n");
              addrSize = decode_link_event_indication(str, &macaddress);
-            debug_print_buffer(macaddress ,addrSize, "Received LINK DOWN FROM"," LINK DOWN");
+            //debug_print_buffer(macaddress ,addrSize, "Received LINK DOWN FROM"," LINK DOWN");
             msg_handler_deassociate(macaddress);
             free(macaddress);
             break;
@@ -285,8 +288,6 @@ int process_incoming_message(void)
         }
 
     }
-
-    return 0;
 }
 
 
@@ -331,6 +332,8 @@ int send_user_reg_indication(void)
     if (res<0)
     {
         dbg("Error sending User registration to MIHF\n");
+    }else{
+        dbg("Sent User registration to MIHF\n");
     }
 
     return res;
@@ -462,7 +465,7 @@ int send_event_subscribe_request(void)
 }
 
 
-void msg_handler_associate(unsigned char * mn_iidP)
+static void msg_handler_associate(unsigned char * mn_iidP)
 {
     dbg("Sending message to mag finite state machine\n");
     struct in6_addr macAddress48;
@@ -476,7 +479,7 @@ void msg_handler_associate(unsigned char * mn_iidP)
     mag_fsm(&msg);
 }
 
-void msg_handler_deassociate(unsigned char * mn_iidP)
+static void msg_handler_deassociate(unsigned char * mn_iidP)
 {
     dbg("Sending message to mag finite state machine\n");
     struct in6_addr macAddress48;
@@ -486,7 +489,16 @@ void msg_handler_deassociate(unsigned char * mn_iidP)
     memset(&msg, 0, sizeof(msg_info_t));
     msg.mn_iid = EUI48_to_EUI64(macAddress48);
     msg.iif = g_pcap_iif;
+    msg.mn_nai = get_node_nai(macAddress48);
     msg.msg_event = hasDEREG;
     mag_fsm(&msg);
 }
 
+ip6mn_nai_t get_node_nai(struct in6_addr mn_iid ){
+
+  int result=0;
+  ip6mn_nai_t nai;
+  nai = mn_nai_hnp_map( mn_iid, &result);
+  return nai;
+
+}

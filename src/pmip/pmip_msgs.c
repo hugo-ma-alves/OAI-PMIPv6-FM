@@ -41,6 +41,10 @@
 #endif
 #include "debug.h"
 #include "conf.h"
+
+#include "pmip_hnp_cache.h"
+
+
 //---------------------------------------------------------------------------------------------------------------------
 /*! \var struct sock mh_sock
 \brief Global var declared in mipl component
@@ -57,172 +61,183 @@ static const uint8_t _pad7[7] = { 0x01, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00 };
 //---------------------------------------------------------------------------------------------------------------------
 static int create_opt_pad(struct iovec *iov, int pad)
 {
-    if (pad == 2) {
+  if (pad == 2) {
         //iov->iov_base = (void *) _pad2;
-        iov->iov_base = malloc(sizeof(_pad2));
-        memcpy(iov->iov_base, _pad2, sizeof(_pad2));
-    }
-    else if (pad == 4) {
+    iov->iov_base = malloc(sizeof(_pad2));
+    memcpy(iov->iov_base, _pad2, sizeof(_pad2));
+  }
+  else if (pad == 4) {
         //iov->iov_base = (void *) _pad4;
-        iov->iov_base = malloc(sizeof(_pad4));
-        memcpy(iov->iov_base, _pad4, sizeof(_pad4));
-    }
-    else if (pad == 6) {
+    iov->iov_base = malloc(sizeof(_pad4));
+    memcpy(iov->iov_base, _pad4, sizeof(_pad4));
+  }
+  else if (pad == 6) {
         //iov->iov_base = (void *) _pad6;
-        iov->iov_base = malloc(sizeof(_pad6));
-        memcpy(iov->iov_base, _pad6, sizeof(_pad6));
-    }
+    iov->iov_base = malloc(sizeof(_pad6));
+    memcpy(iov->iov_base, _pad6, sizeof(_pad6));
+  }
     /* Odd pads do not occur with current spec, so test them last */
-    else if (pad == 1) {
-        iov->iov_base = (void *) _pad1;
-        iov->iov_base = malloc(sizeof(_pad1));
-        memcpy(iov->iov_base, _pad1, sizeof(_pad1));
-    }
-    else if (pad == 3) {
+  else if (pad == 1) {
+    iov->iov_base = (void *) _pad1;
+    iov->iov_base = malloc(sizeof(_pad1));
+    memcpy(iov->iov_base, _pad1, sizeof(_pad1));
+  }
+  else if (pad == 3) {
         //iov->iov_base = (void *) _pad3;
-        iov->iov_base = malloc(sizeof(_pad3));
-        memcpy(iov->iov_base, _pad3, sizeof(_pad3));
-    }
-    else if (pad == 5) {
+    iov->iov_base = malloc(sizeof(_pad3));
+    memcpy(iov->iov_base, _pad3, sizeof(_pad3));
+  }
+  else if (pad == 5) {
         //iov->iov_base = (void *) _pad5;
-        iov->iov_base = malloc(sizeof(_pad5));
-        memcpy(iov->iov_base, _pad5, sizeof(_pad5));
-    }
-    else if (pad == 7) {
+    iov->iov_base = malloc(sizeof(_pad5));
+    memcpy(iov->iov_base, _pad5, sizeof(_pad5));
+  }
+  else if (pad == 7) {
         //iov->iov_base = (void *) _pad7;
-        iov->iov_base = malloc(sizeof(_pad7));
-        memcpy(iov->iov_base, _pad7, sizeof(_pad7));
-    }
-    iov->iov_len = pad;
-    return 0;
+    iov->iov_base = malloc(sizeof(_pad7));
+    memcpy(iov->iov_base, _pad7, sizeof(_pad7));
+  }
+  iov->iov_len = pad;
+  return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
 static inline int optpad(int xn, int y, int offset)
 {
-    return ((y - offset) & (xn - 1));
+  return ((y - offset) & (xn - 1));
 }
 //---------------------------------------------------------------------------------------------------------------------
 static int mh_try_pad(const struct iovec *in, struct iovec *out, int count)
 {
-    size_t len = 0;
-    int m, n = 1, pad = 0;
-    struct ip6_mh_opt *opt;
-    out[0].iov_len = in[0].iov_len;
-    out[0].iov_base = in[0].iov_base;
-    len += in[0].iov_len;
-    for (m = 1; m < count; m++) {
-        opt = (struct ip6_mh_opt *) in[m].iov_base;
-        switch (opt->ip6mhopt_type) {
-        case IP6_MHOPT_BREFRESH:
+  size_t len = 0;
+  int m, n = 1, pad = 0;
+  struct ip6_mh_opt *opt;
+  out[0].iov_len = in[0].iov_len;
+  out[0].iov_base = in[0].iov_base;
+  len += in[0].iov_len;
+  for (m = 1; m < count; m++) {
+    opt = (struct ip6_mh_opt *) in[m].iov_base;
+    switch (opt->ip6mhopt_type) {
+      case IP6_MHOPT_BREFRESH:
             pad = optpad(2, 0, len);    /* 2n */
-            break;
-        case IP6_MHOPT_ALTCOA:
+      break;
+      case IP6_MHOPT_ALTCOA:
             pad = optpad(8, 6, len);    /* 8n+6 */
-            break;
-        case IP6_MHOPT_NONCEID:
+      break;
+      case IP6_MHOPT_NONCEID:
             pad = optpad(2, 0, len);    /* 2n */
-            break;
-        case IP6_MHOPT_BAUTH:
+      break;
+      case IP6_MHOPT_BAUTH:
             pad = optpad(8, 2, len);    /* 8n+2 */
-            break;
-        case IP6_MHOPT_MOBILE_NODE_IDENTIFIER:
+      break;
+      case IP6_MHOPT_MOBILE_NODE_IDENTIFIER:
             pad = 0;    /* This option does not have any alignment requirements. */
-            break;
-        case IP6_MHOPT_HOME_NETWORK_PREFIX:
+      break;
+      case IP6_MHOPT_HOME_NETWORK_PREFIX:
             pad = optpad(8, 4, len);    /* 8n+4 */
-            break;
-        case IP6_MHOPT_HANDOFF_INDICATOR:
+      break;
+      case IP6_MHOPT_HANDOFF_INDICATOR:
             pad = 0;    /* The Handoff Indicator option has no alignment requirement. */
-            break;
-        case IP6_MHOPT_ACCESS_TECHNOLOGY_TYPE:
+      break;
+      case IP6_MHOPT_ACCESS_TECHNOLOGY_TYPE:
             pad = 0;    /* The Access Technology Type Option has no alignment requirement. */
-            break;
-        case IP6_MHOPT_MOBILE_NODE_LINK_LAYER_IDENTIFIER:
+      break;
+      case IP6_MHOPT_MOBILE_NODE_LINK_LAYER_IDENTIFIER:
             pad = optpad(8, 0, len);    /* 8n */
-            break;
-        case IP6_MHOPT_LINK_LOCAL_ADDRESS:
+      break;
+      case IP6_MHOPT_LINK_LOCAL_ADDRESS:
             pad = optpad(8, 6, len);    /* 8n+6 */
-            break;
-        case IP6_MHOPT_TIME_STAMP:
+      break;
+      case IP6_MHOPT_TIME_STAMP:
             pad = optpad(8, 2, len);    /* 8n+2 */
-            break;
+      break;
 
 
-        }
-        if (pad > 0) {
-            create_opt_pad(&out[n++], pad);
-            len += pad;
-        }
-        len += in[m].iov_len;
-        out[n].iov_len = in[m].iov_len;
-        out[n].iov_base = in[m].iov_base;
-        n++;
     }
-    if (count == 1) {
-        pad = optpad(8, 0, len);
-        create_opt_pad(&out[n++], pad);
+    if (pad > 0) {
+      create_opt_pad(&out[n++], pad);
+      len += pad;
     }
-    return n;
+    len += in[m].iov_len;
+    out[n].iov_len = in[m].iov_len;
+    out[n].iov_base = in[m].iov_base;
+    n++;
+  }
+  if (count == 1) {
+    pad = optpad(8, 0, len);
+    create_opt_pad(&out[n++], pad);
+  }
+  return n;
 }
 //---------------------------------------------------------------------------------------------------------------------
 static size_t mh_length(struct iovec *vec, int count)
 {
-    size_t len = 0;
-    int i;
-    for (i = 0; i < count; i++) {
-        len += vec[i].iov_len;
-    }
-    return len;
+  size_t len = 0;
+  int i;
+  for (i = 0; i < count; i++) {
+    len += vec[i].iov_len;
+  }
+  return len;
 }
 //---------------------------------------------------------------------------------------------------------------------
 void init_pbu_sequence_number(void) {
-    g_mag_sequence_number = 0;
+  g_mag_sequence_number = 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int get_new_pbu_sequence_number(void)
 {
     // TO DO: should be thread protected
-    int seq = g_mag_sequence_number;
-    g_mag_sequence_number = g_mag_sequence_number + 1;
-    return seq;
+  int seq = g_mag_sequence_number;
+  g_mag_sequence_number = g_mag_sequence_number + 1;
+  return seq;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int is_pba_is_response_to_last_pbu_sent(msg_info_t * pba_info, pmip_entry_t *bce)
 {
-    if ( pba_info->seqno == bce->seqno_out) {
-        if ((pba_info->timestamp.first == bce->timestamp.first) && (pba_info->timestamp.second == bce->timestamp.second)) {
-            if (IN6_ARE_ADDR_EQUAL(&pba_info->mn_prefix, &bce->mn_prefix)) {
-                if (IN6_ARE_ADDR_EQUAL(&pba_info->mn_iid, &bce->mn_suffix)) {
-                    return 1;
-                } else {
-                    dbg("Not identical Mobile Node Link-layer Identifier Option: PBU:%x:%x:%x:%x:%x:%x:%x:%x  PBA:%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_suffix), NIP6ADDR(&pba_info->mn_iid));
-                }
-            } else {
-                dbg("Not identical Home Network Prefix option: PBU:%x:%x:%x:%x:%x:%x:%x:%x  PBA:%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix), NIP6ADDR(&pba_info->mn_prefix));
-            }
+  if ( pba_info->seqno == bce->seqno_out) {
+    if ((pba_info->timestamp.first == bce->timestamp.first) && (pba_info->timestamp.second == bce->timestamp.second)) {
+      if (IN6_ARE_ADDR_EQUAL(&pba_info->mn_prefix, &bce->mn_prefix)) {
+        if (IN6_ARE_ADDR_EQUAL(&pba_info->mn_iid, &bce->mn_suffix)) {
+          return 1;
         } else {
-            dbg("Not identical Timestamp option: PBU:%08X%08X  PBA:%08X%08X\n", bce->timestamp.first, bce->timestamp.second, pba_info->timestamp.first, pba_info->timestamp.second);
+          dbg("Not identical Mobile Node Link-layer Identifier Option: PBU:%x:%x:%x:%x:%x:%x:%x:%x  PBA:%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_suffix), NIP6ADDR(&pba_info->mn_iid));
         }
+      } else {
+        dbg("Not identical Home Network Prefix option: PBU:%x:%x:%x:%x:%x:%x:%x:%x  PBA:%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix), NIP6ADDR(&pba_info->mn_prefix));
+      }
     } else {
-        dbg("Not identical Sequence Number: PBU:%d  PBA:%d\n", bce->seqno_out, pba_info->seqno);
+      dbg("Not identical Timestamp option: PBU:%08X%08X  PBA:%08X%08X\n", bce->timestamp.first, bce->timestamp.second, pba_info->timestamp.first, pba_info->timestamp.second);
     }
-    return 0;
+  } else {
+    dbg("Not identical Sequence Number: PBU:%d  PBA:%d\n", bce->seqno_out, pba_info->seqno);
+  }
+  return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
 struct in6_addr get_node_id(struct in6_addr *mn_addr)
 {
-    struct in6_addr result;
-    result = in6addr_any;
-    memcpy(&result.s6_addr32[2], &mn_addr->s6_addr32[2], sizeof(ip6mnid_t));
-    return result;
+  struct in6_addr result;
+  result = in6addr_any;
+  memcpy(&result.s6_addr32[2], &mn_addr->s6_addr32[2], sizeof(ip6mnid_t));
+  return result;
 }
+//---------------------------------------------------------------------------------------------------------------------
+
+ ip6mn_nai_t get_node_nai(struct in6_addr mn_iid ){
+
+  int result=0;
+  ip6mn_nai_t nai;
+  nai = mn_nai_hnp_map( mn_iid, &result);
+  return nai;
+
+}
+
 //---------------------------------------------------------------------------------------------------------------------
 struct in6_addr get_node_prefix(struct in6_addr *mn_addr)
 {
-    struct in6_addr result;
-    result = in6addr_any;
-    memcpy(&result.s6_addr32[0], &mn_addr->s6_addr32[0], PREFIX_LENGTH / 8);
-    return result;
+  struct in6_addr result;
+  result = in6addr_any;
+  memcpy(&result.s6_addr32[0], &mn_addr->s6_addr32[0], PREFIX_LENGTH / 8);
+  return result;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int mh_create_opt_home_net_prefix(struct iovec *iov, struct in6_addr *Home_Network_Prefix)
@@ -280,23 +295,23 @@ int mh_create_opt_home_net_prefix(struct iovec *iov, struct in6_addr *Home_Netwo
            A sixteen-byte field containing the mobile node's IPv6 Home
            Network Prefix.
      */
-    ip6_mh_opt_home_net_prefix_t *opt;
-    size_t optlen = sizeof(ip6_mh_opt_home_net_prefix_t);
-    iov->iov_base = malloc(optlen);
-    iov->iov_len = optlen;
-    if (iov->iov_base == NULL)
-        return -ENOMEM;
-    opt = (ip6_mh_opt_home_net_prefix_t *) iov->iov_base;
-    opt->ip6hnp_type       = IP6_MHOPT_HOME_NETWORK_PREFIX;
-    opt->ip6hnp_len        = 18;
-    opt->ip6hnp_reserved   = 0;
+           ip6_mh_opt_home_net_prefix_t *opt;
+           size_t optlen = sizeof(ip6_mh_opt_home_net_prefix_t);
+           iov->iov_base = malloc(optlen);
+           iov->iov_len = optlen;
+           if (iov->iov_base == NULL)
+            return -ENOMEM;
+          opt = (ip6_mh_opt_home_net_prefix_t *) iov->iov_base;
+          opt->ip6hnp_type       = IP6_MHOPT_HOME_NETWORK_PREFIX;
+          opt->ip6hnp_len        = 18;
+          opt->ip6hnp_reserved   = 0;
     opt->ip6hnp_prefix_len = 128;   //128 bits
     opt->ip6hnp_prefix     = *Home_Network_Prefix;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_handoff_indicator(struct iovec *iov, int handoff_indicator)
-{
+  int mh_create_opt_handoff_indicator(struct iovec *iov, int handoff_indicator)
+  {
     /* From RFC 5213
 8.4. Handoff Indicator Option
 
@@ -345,22 +360,22 @@ int mh_create_opt_handoff_indicator(struct iovec *iov, int handoff_indicator)
         5: Handoff state not changed (Re-registration)
 
      */
-    ip6_mh_opt_handoff_indicator_t *opt;
-    size_t optlen = sizeof(ip6_mh_opt_handoff_indicator_t);
-    iov->iov_base = malloc(optlen);
-    iov->iov_len = optlen;
-    if (iov->iov_base == NULL)
-        return -ENOMEM;
-    opt = (ip6_mh_opt_handoff_indicator_t *) iov->iov_base;
-    opt->ip6hi_type     = IP6_MHOPT_HANDOFF_INDICATOR;
+        ip6_mh_opt_handoff_indicator_t *opt;
+        size_t optlen = sizeof(ip6_mh_opt_handoff_indicator_t);
+        iov->iov_base = malloc(optlen);
+        iov->iov_len = optlen;
+        if (iov->iov_base == NULL)
+          return -ENOMEM;
+        opt = (ip6_mh_opt_handoff_indicator_t *) iov->iov_base;
+        opt->ip6hi_type     = IP6_MHOPT_HANDOFF_INDICATOR;
     opt->ip6hi_len      = 2;  //set to 2 bytes
     opt->ip6hi_reserved = 0;
     opt->ip6hi_hi       = (__u8)handoff_indicator;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_access_technology_type(struct iovec *iov, int att)
-{
+  int mh_create_opt_access_technology_type(struct iovec *iov, int att)
+  {
     /* From RFC 5213
 8.5. Access Technology Type Option
 
@@ -414,22 +429,22 @@ int mh_create_opt_access_technology_type(struct iovec *iov, int att)
         4: IEEE 802.11a/b/g ("Wireless LAN")
         5: IEEE 802.16e     ("WIMAX")
 */
-    ip6_mh_opt_access_technology_type_t *opt;
-    size_t optlen = sizeof(ip6_mh_opt_access_technology_type_t);
-    iov->iov_base = malloc(optlen);
-    iov->iov_len = optlen;
-    if (iov->iov_base == NULL)
-        return -ENOMEM;
-    opt = (ip6_mh_opt_access_technology_type_t *) iov->iov_base;
-    opt->ip6att_type     = IP6_MHOPT_ACCESS_TECHNOLOGY_TYPE;
+        ip6_mh_opt_access_technology_type_t *opt;
+        size_t optlen = sizeof(ip6_mh_opt_access_technology_type_t);
+        iov->iov_base = malloc(optlen);
+        iov->iov_len = optlen;
+        if (iov->iov_base == NULL)
+          return -ENOMEM;
+        opt = (ip6_mh_opt_access_technology_type_t *) iov->iov_base;
+        opt->ip6att_type     = IP6_MHOPT_ACCESS_TECHNOLOGY_TYPE;
     opt->ip6att_len      = 2;  //set to 2 bytes
     opt->ip6att_reserved = 0;
     opt->ip6att_att      = (__u8)att;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_mobile_node_identifier(struct iovec *iov, int subtype, ip6mnid_t * MN_ID)
-{
+  int mh_create_opt_mobile_node_identifier(struct iovec *iov, int subtype, ip6mn_nai_t * MN_ID)
+  {
     /* From RFC 4283
     3. Mobile Node Identifier Option
 
@@ -474,22 +489,22 @@ int mh_create_opt_mobile_node_identifier(struct iovec *iov, int subtype, ip6mnid
        This option does not have any alignment requirements.
 
      */
-    ip6_mh_opt_mobile_node_identifier_t *opt;
-    size_t optlen = sizeof(ip6_mh_opt_mobile_node_identifier_t);
-    iov->iov_base = malloc(optlen);
-    iov->iov_len = optlen;
-    if (iov->iov_base == NULL)
+       ip6_mh_opt_mobile_node_identifier_t *opt;
+       size_t optlen = sizeof(ip6_mh_opt_mobile_node_identifier_t);
+       iov->iov_base = malloc(optlen);
+       iov->iov_len = optlen;
+       if (iov->iov_base == NULL)
         return -ENOMEM;
-    opt = (ip6_mh_opt_mobile_node_identifier_t *) iov->iov_base;
-    opt->ip6mnid_type    = IP6_MHOPT_MOBILE_NODE_IDENTIFIER;
-    opt->ip6mnid_len     = 9;  //set to 9 bytes.
+      opt = (ip6_mh_opt_mobile_node_identifier_t *) iov->iov_base;
+      opt->ip6mnid_type    = IP6_MHOPT_MOBILE_NODE_IDENTIFIER;
+    opt->ip6mnid_len     = sizeof(ip6mn_nai_t) + 1;  //set to 9 bytes.
     opt->ip6mnid_subtype = subtype;
     opt->ip6mnid_id      = *MN_ID;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_mobile_node_link_layer_identifier(struct iovec *iov, ip6mnid_t * mnlli)
-{
+  int mh_create_opt_mobile_node_link_layer_identifier(struct iovec *iov, ip6mnid_t * mnlli)
+  {
     /* From RFC 5213
      * 8.6. Mobile Node Link-layer Identifier Option
 
@@ -541,22 +556,22 @@ int mh_create_opt_mobile_node_link_layer_identifier(struct iovec *iov, ip6mnid_t
 
 
      */
-    ip6_mh_opt_mobile_node_link_layer_identifier_t *opt;
-    size_t optlen = sizeof(ip6_mh_opt_mobile_node_link_layer_identifier_t);
-    iov->iov_base = malloc(optlen);
-    iov->iov_len = optlen;
-    if (iov->iov_base == NULL)
-        return -ENOMEM;
-    opt = (ip6_mh_opt_mobile_node_link_layer_identifier_t *) iov->iov_base;
-    opt->ip6mnllid_type     = IP6_MHOPT_MOBILE_NODE_LINK_LAYER_IDENTIFIER;
+         ip6_mh_opt_mobile_node_link_layer_identifier_t *opt;
+         size_t optlen = sizeof(ip6_mh_opt_mobile_node_link_layer_identifier_t);
+         iov->iov_base = malloc(optlen);
+         iov->iov_len = optlen;
+         if (iov->iov_base == NULL)
+          return -ENOMEM;
+        opt = (ip6_mh_opt_mobile_node_link_layer_identifier_t *) iov->iov_base;
+        opt->ip6mnllid_type     = IP6_MHOPT_MOBILE_NODE_LINK_LAYER_IDENTIFIER;
     opt->ip6mnllid_len      = 10;  //set to 10 bytes.
     opt->ip6mnllid_reserved = 0;
     opt->ip6mnllid_lli      = *mnlli;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_time_stamp(struct iovec *iov, ip6ts_t * Timestamp)
-{
+  int mh_create_opt_time_stamp(struct iovec *iov, ip6ts_t * Timestamp)
+  {
     /* From RFC 5213
      8.8. Timestamp Option
 
@@ -595,21 +610,21 @@ int mh_create_opt_time_stamp(struct iovec *iov, ip6ts_t * Timestamp)
                the field, and the remaining 16 bits indicate the number of
                1/65536 fractions of a second.
      */
-    ip6_mh_opt_time_stamp_t *opt;
-    size_t optlen = sizeof(ip6_mh_opt_time_stamp_t);
-    iov->iov_base = malloc(optlen);
-    iov->iov_len  = optlen;
-    if (iov->iov_base == NULL)
-        return -ENOMEM;
-    opt = (ip6_mh_opt_time_stamp_t *) iov->iov_base;
-    opt->ip6mots_type = IP6_MHOPT_TIME_STAMP;
+               ip6_mh_opt_time_stamp_t *opt;
+               size_t optlen = sizeof(ip6_mh_opt_time_stamp_t);
+               iov->iov_base = malloc(optlen);
+               iov->iov_len  = optlen;
+               if (iov->iov_base == NULL)
+                return -ENOMEM;
+              opt = (ip6_mh_opt_time_stamp_t *) iov->iov_base;
+              opt->ip6mots_type = IP6_MHOPT_TIME_STAMP;
     opt->ip6mots_len  = 8;   // set to 8 bytes.
     opt->time_stamp   = *Timestamp;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_link_local_address(struct iovec *iov, struct in6_addr *lla)
-{
+  int mh_create_opt_link_local_address(struct iovec *iov, struct in6_addr *lla)
+  {
     /* From RFC 5213
      8.7. Link-local Address Option
 
@@ -650,96 +665,96 @@ int mh_create_opt_link_local_address(struct iovec *iov, struct in6_addr *lla)
 
                 A sixteen-byte field containing the link-local address.
      */
-    ip6_mh_opt_link_local_address_t *opt;
-    size_t optlen = sizeof(ip6_mh_opt_link_local_address_t);
-    iov->iov_base = malloc(optlen);
-    iov->iov_len = optlen;
-    if (iov->iov_base == NULL)
-        return -ENOMEM;
-    opt = (ip6_mh_opt_link_local_address_t *) iov->iov_base;
-    opt->ip6link_type = IP6_MHOPT_LINK_LOCAL_ADDRESS;
+                ip6_mh_opt_link_local_address_t *opt;
+                size_t optlen = sizeof(ip6_mh_opt_link_local_address_t);
+                iov->iov_base = malloc(optlen);
+                iov->iov_len = optlen;
+                if (iov->iov_base == NULL)
+                  return -ENOMEM;
+                opt = (ip6_mh_opt_link_local_address_t *) iov->iov_base;
+                opt->ip6link_type = IP6_MHOPT_LINK_LOCAL_ADDRESS;
     opt->ip6link_len  = 16;  //set to 16 bytes
     opt->ip6link_addr = *lla;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_dst_mn_addr(struct iovec *iov, struct in6_addr *dst_mn_addr)
-{
+  int mh_create_opt_dst_mn_addr(struct iovec *iov, struct in6_addr *dst_mn_addr)
+  {
     ip6_mh_opt_dst_mn_addr_t *opt;
     size_t optlen = sizeof(ip6_mh_opt_dst_mn_addr_t);
     iov->iov_base = malloc(optlen);
     iov->iov_len = optlen;
     if (iov->iov_base == NULL)
-        return -ENOMEM;
+      return -ENOMEM;
     opt = (ip6_mh_opt_dst_mn_addr_t *) iov->iov_base;
     opt->ip6dma_type = IP6_MHOPT_DST_MN_ADDR;
     opt->ip6dma_len = 16;
     opt->dst_mn_addr = *dst_mn_addr;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_serv_mag_addr(struct iovec *iov, struct in6_addr *Serv_MAG_addr)
-{
+  int mh_create_opt_serv_mag_addr(struct iovec *iov, struct in6_addr *Serv_MAG_addr)
+  {
     ip6_mh_opt_serv_mag_addr_t *opt;
     size_t optlen = sizeof(ip6_mh_opt_serv_mag_addr_t);
     iov->iov_base = malloc(optlen);
     iov->iov_len = optlen;
     if (iov->iov_base == NULL)
-        return -ENOMEM;
+      return -ENOMEM;
     opt = (ip6_mh_opt_serv_mag_addr_t *) iov->iov_base;
     opt->ip6sma_type = IP6_MHOPT_SERV_MAG_ADDR;
     opt->ip6sma_len = 16;   //16 bytes
     opt->serv_mag_addr = *Serv_MAG_addr;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_serv_lma_addr(struct iovec *iov, struct in6_addr *serv_lma_addr)
-{
+  int mh_create_opt_serv_lma_addr(struct iovec *iov, struct in6_addr *serv_lma_addr)
+  {
     ip6_mh_opt_serv_lma_addr_t *opt;
     size_t optlen = sizeof(ip6_mh_opt_serv_lma_addr_t);
     iov->iov_base = malloc(optlen);
     iov->iov_len = optlen;
     if (iov->iov_base == NULL)
-        return -ENOMEM;
+      return -ENOMEM;
     opt = (ip6_mh_opt_serv_lma_addr_t *) iov->iov_base;
     opt->ip6sla_type = IP6_MHOPT_SERV_LMA_ADDR;
     opt->ip6sla_len = 16;   //16 bytes
     opt->serv_lma_addr = *serv_lma_addr;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_src_mn_addr(struct iovec *iov, struct in6_addr *src_mn_addr)
-{
+  int mh_create_opt_src_mn_addr(struct iovec *iov, struct in6_addr *src_mn_addr)
+  {
     struct ip6_mh_opt_src_mn_addr *opt;
     size_t optlen = sizeof(struct ip6_mh_opt_src_mn_addr);
     iov->iov_base = malloc(optlen);
     iov->iov_len = optlen;
     if (iov->iov_base == NULL)
-        return -ENOMEM;
+      return -ENOMEM;
     opt = (struct ip6_mh_opt_src_mn_addr *) iov->iov_base;
     opt->ip6sma_type = IP6_MHOPT_SRC_MN_ADDR;
     opt->ip6sma_len = 16;   //16 bytes
     opt->src_mn_addr = *src_mn_addr;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_create_opt_src_mag_addr(struct iovec *iov, struct in6_addr *src_mag_addr)
-{
+  int mh_create_opt_src_mag_addr(struct iovec *iov, struct in6_addr *src_mag_addr)
+  {
     ip6_mh_opt_src_mag_addr_t *opt;
     size_t optlen = sizeof(ip6_mh_opt_src_mag_addr_t);
     iov->iov_base = malloc(optlen);
     iov->iov_len = optlen;
     if (iov->iov_base == NULL)
-        return -ENOMEM;
+      return -ENOMEM;
     opt = (ip6_mh_opt_src_mag_addr_t *) iov->iov_base;
     opt->ip6sma_type = IP6_MHOPT_SRC_MAG_ADDR;
     opt->ip6sma_len = 16;   //16 bytes
     opt->src_mag_addr = *src_mag_addr;
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_pbu_parse(msg_info_t * info, struct ip6_mh_binding_update *pbu, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
-{
+  int mh_pbu_parse(msg_info_t * info, struct ip6_mh_binding_update *pbu, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
+  {
     static struct mh_options mh_opts;
     ip6_mh_opt_home_net_prefix_t                     *home_net_prefix_opt;
     ip6_mh_opt_mobile_node_identifier_t              *mobile_node_identifier_opt;
@@ -747,7 +762,7 @@ int mh_pbu_parse(msg_info_t * info, struct ip6_mh_binding_update *pbu, ssize_t l
     ip6_mh_opt_time_stamp_t                          *time_stamp_opt;
     ip6_mh_opt_handoff_indicator_t                   *handoff_indicator_opt;
     ip6_mh_opt_access_technology_type_t              *access_technology_type_opt;
-    struct in6_addr                                  mn_identifier;
+  //  struct in6_addr                                  mn_identifier;
     int                                              return_code;
     bzero(&mh_opts, sizeof(mh_opts));
     info->src = *in_addrs->src;
@@ -755,13 +770,22 @@ int mh_pbu_parse(msg_info_t * info, struct ip6_mh_binding_update *pbu, ssize_t l
     info->iif = iif;
     info->addrs.src = &info->src;
     info->addrs.dst = &info->dst;
+    info->mn_serv_mag_addr=info->src;
+
+    //Check if this PBU is for su
+    if(!IN6_ARE_ADDR_EQUAL(&info->dst,&conf.LmaAddress)){
+      dbg("Received a PBU that wasn't for me. It was for %x:%x:%x:%x:%x:%x:%x:%x I am %x:%x:%x:%x:%x:%x:%x:%x\n",
+      NIP6ADDR(&info->dst),NIP6ADDR(&conf.LmaAddress));
+      return 0;
+    }
+
     if (len < (ssize_t)sizeof(struct ip6_mh_binding_update)) {
-        dbg("Bad len of PBU mobility header   : %d versus sizeof(struct ip6_mh_binding_update)= %d\n", len, sizeof(struct ip6_mh_binding_update));
-        return 0;
+      dbg("Bad len of PBU mobility header   : %d versus sizeof(struct ip6_mh_binding_update)= %d\n", len, sizeof(struct ip6_mh_binding_update));
+      return 0;
     }
     if ((return_code = mh_opt_parse(&pbu->ip6mhbu_hdr, len, sizeof(struct ip6_mh_binding_update), &mh_opts)) < 0) {
-        dbg("Error %d in parsing PBU options\n", return_code);
-        return 0;
+      dbg("Error %d in parsing PBU options\n", return_code);
+      return 0;
     }
     info->PBU_flags = ntohs(pbu->ip6mhbu_flags);
     info->lifetime.tv_sec = (ntohs(pbu->ip6mhbu_lifetime) << 2);
@@ -775,55 +799,59 @@ int mh_pbu_parse(msg_info_t * info, struct ip6_mh_binding_update *pbu, ssize_t l
     mobile_node_identifier_opt = mh_opt(&pbu->ip6mhbu_hdr, &mh_opts, IP6_MHOPT_MOBILE_NODE_IDENTIFIER);
     if (mobile_node_identifier_opt) {
         //copy
-        mn_identifier = in6addr_any;
-        memcpy(&mn_identifier.s6_addr32[2], &mobile_node_identifier_opt->ip6mnid_id, sizeof(ip6mnid_t));
-        dbg("Mobile Node Identifier Option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&mn_identifier));
+        //mn_identifier = in6addr_any;
+      memcpy(&info->mn_nai, &mobile_node_identifier_opt->ip6mnid_id, sizeof(ip6mn_nai_t));
+      int naiSize=sizeof(ip6mn_nai_t);
+      char nai[naiSize+1];
+      nai[naiSize]='\0';
+      memcpy(&nai,&info->mn_nai,naiSize);
+      dbg("Mobile Node Identifier (NAI) Option: %s\n", nai);
     }
 
     home_net_prefix_opt = mh_opt(&pbu->ip6mhbu_hdr, &mh_opts, IP6_MHOPT_HOME_NETWORK_PREFIX);
     if (home_net_prefix_opt)
     {
         //copy
-        info->mn_prefix = home_net_prefix_opt->ip6hnp_prefix;
-        dbg("Mobile Node Home Network Prefix option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_prefix));
+      info->mn_prefix = home_net_prefix_opt->ip6hnp_prefix;
+      dbg("Mobile Node Home Network Prefix option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_prefix));
     }
 
     mobile_node_link_layer_identifier_opt = mh_opt(&pbu->ip6mhbu_hdr, &mh_opts, IP6_MHOPT_MOBILE_NODE_LINK_LAYER_IDENTIFIER);
     if (mobile_node_link_layer_identifier_opt) {
         //copy
-        info->mn_iid = in6addr_any;
-        memcpy(&info->mn_iid.s6_addr32[2], &mobile_node_link_layer_identifier_opt->ip6mnllid_lli, sizeof(ip6mnid_t));
-        dbg("Mobile Node Link-layer Identifier Option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_iid));
+      info->mn_iid = in6addr_any;
+      memcpy(&info->mn_iid.s6_addr32[2], &mobile_node_link_layer_identifier_opt->ip6mnllid_lli, sizeof(ip6mnid_t));
+      dbg("Mobile Node Link-layer Identifier Option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_iid));
     }
 
     time_stamp_opt = mh_opt(&pbu->ip6mhbu_hdr, &mh_opts, IP6_MHOPT_TIME_STAMP);
     if (time_stamp_opt) {
         //copy
-        info->timestamp.first = time_stamp_opt->time_stamp.first;
-        info->timestamp.second = time_stamp_opt->time_stamp.second;
-        unsigned long long int seconds = info->timestamp.first << 16;
-        seconds = seconds | ((info->timestamp.second & 0xFFFF0000) >> 16);
-        unsigned int useconds = (info->timestamp.second & 0x0000FFFF) * 1000000 / 65536;
-        dbg("Timestamp option: %ld sec %d usec\n", seconds, useconds);
+      info->timestamp.first = time_stamp_opt->time_stamp.first;
+      info->timestamp.second = time_stamp_opt->time_stamp.second;
+      unsigned long long int seconds = info->timestamp.first << 16;
+      seconds = seconds | ((info->timestamp.second & 0xFFFF0000) >> 16);
+      unsigned int useconds = (info->timestamp.second & 0x0000FFFF) * 1000000 / 65536;
+      dbg("Timestamp option: %ld sec %d usec\n", seconds, useconds);
     }
 
     handoff_indicator_opt = mh_opt(&pbu->ip6mhbu_hdr, &mh_opts, IP6_MHOPT_HANDOFF_INDICATOR);
     if (handoff_indicator_opt) {
-        dbg("Handoff Indicator option: %d\n", handoff_indicator_opt->ip6hi_hi);
+      dbg("Handoff Indicator option: %d\n", handoff_indicator_opt->ip6hi_hi);
     }
 
     access_technology_type_opt = mh_opt(&pbu->ip6mhbu_hdr, &mh_opts, IP6_MHOPT_ACCESS_TECHNOLOGY_TYPE);
     if (access_technology_type_opt) {
-        dbg("Access Technology Type option: %d\n", access_technology_type_opt->ip6att_att);
+      dbg("Access Technology Type option: %d\n", access_technology_type_opt->ip6att_att);
     }
 
     info->msg_event = hasPBU;
     dbg("FSM Message Event: %d\n", info->msg_event);
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_pba_parse(msg_info_t * info, struct ip6_mh_binding_ack *pba, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
-{
+  int mh_pba_parse(msg_info_t * info, struct ip6_mh_binding_ack *pba, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
+  {
     static struct mh_options mh_opts;
     ip6_mh_opt_home_net_prefix_t                     *home_net_prefix_opt;
     ip6_mh_opt_mobile_node_identifier_t              *mobile_node_identifier_opt;
@@ -831,7 +859,6 @@ int mh_pba_parse(msg_info_t * info, struct ip6_mh_binding_ack *pba, ssize_t len,
     ip6_mh_opt_time_stamp_t                          *time_stamp_opt;
     ip6_mh_opt_handoff_indicator_t                   *handoff_indicator_opt;
     ip6_mh_opt_access_technology_type_t              *access_technology_type_opt;
-    struct in6_addr                                  mn_identifier;
 
     bzero(&mh_opts, sizeof(mh_opts));
     info->src = *in_addrs->src;
@@ -840,159 +867,169 @@ int mh_pba_parse(msg_info_t * info, struct ip6_mh_binding_ack *pba, ssize_t len,
     info->addrs.src = &info->src;
     info->addrs.dst = &info->dst;
 
-    mobile_node_identifier_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_MOBILE_NODE_IDENTIFIER);
-    if (mobile_node_identifier_opt) {
-        //copy
-        mn_identifier = in6addr_any;
-        memcpy(&mn_identifier.s6_addr32[2], &mobile_node_identifier_opt->ip6mnid_id, sizeof(ip6mnid_t));
-        dbg("Mobile Node Identifier Option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&mn_identifier));
-    }
 
     if ((len < (ssize_t)sizeof(struct ip6_mh_binding_ack)
-            || mh_opt_parse(&pba->ip6mhba_hdr, len, sizeof(struct ip6_mh_binding_ack), &mh_opts) < 0)) {
-        return 0;
-    }
-    home_net_prefix_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_HOME_NETWORK_PREFIX);
-    if (home_net_prefix_opt) {
-        info->mn_prefix = home_net_prefix_opt->ip6hnp_prefix;
-        dbg("Mobile Node Home Network Prefix option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_prefix));
-    }
+      || mh_opt_parse(&pba->ip6mhba_hdr, len, sizeof(struct ip6_mh_binding_ack), &mh_opts) < 0)) {
+      return 0;
+  }
 
-    mobile_node_link_layer_identifier_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_MOBILE_NODE_LINK_LAYER_IDENTIFIER);
-    if (mobile_node_link_layer_identifier_opt) {
+  mobile_node_identifier_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_MOBILE_NODE_IDENTIFIER);
+  if (mobile_node_identifier_opt) {
+    //copy
+    memcpy(&info->mn_nai, &mobile_node_identifier_opt->ip6mnid_id, sizeof(ip6mn_nai_t));
+    int naiSize=sizeof(ip6mn_nai_t);
+    char nai[naiSize+1];
+    nai[naiSize]='\0';
+    memcpy(&nai,&info->mn_nai,naiSize);
+    dbg("Mobile Node Identifier (NAI) Option: %s\n", nai);
+  }
+
+
+  home_net_prefix_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_HOME_NETWORK_PREFIX);
+  if (home_net_prefix_opt) {
+    info->mn_prefix = home_net_prefix_opt->ip6hnp_prefix;
+    dbg("Mobile Node Home Network Prefix option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_prefix));
+  }
+
+  mobile_node_link_layer_identifier_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_MOBILE_NODE_LINK_LAYER_IDENTIFIER);
+  if (mobile_node_link_layer_identifier_opt) {
         //copy
-        info->mn_iid = in6addr_any;
-        memcpy(&info->mn_iid.s6_addr32[2], &mobile_node_link_layer_identifier_opt->ip6mnllid_lli, sizeof(ip6mnid_t));
-        dbg("Mobile Node Link-layer Identifier Option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_iid));
-    }
+    info->mn_iid = in6addr_any;
+    memcpy(&info->mn_iid.s6_addr32[2], &mobile_node_link_layer_identifier_opt->ip6mnllid_lli, sizeof(ip6mnid_t));
+    dbg("Mobile Node Link-layer Identifier Option: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_iid));
+  }
 
-    time_stamp_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_TIME_STAMP);
-    if (time_stamp_opt) {
+  time_stamp_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_TIME_STAMP);
+  if (time_stamp_opt) {
         //copy
-        info->timestamp.first = time_stamp_opt->time_stamp.first;
-        info->timestamp.second = time_stamp_opt->time_stamp.second;
-        unsigned long long int seconds = info->timestamp.first << 16;
-        seconds = seconds | ((info->timestamp.second & 0xFFFF0000) >> 16);
-        unsigned int useconds = (info->timestamp.second & 0x0000FFFF) * 1000000 / 65536;
-        dbg("Timestamp option: %ld sec %d usec\n", seconds, useconds);
-    }
+    info->timestamp.first = time_stamp_opt->time_stamp.first;
+    info->timestamp.second = time_stamp_opt->time_stamp.second;
+    unsigned long long int seconds = info->timestamp.first << 16;
+    seconds = seconds | ((info->timestamp.second & 0xFFFF0000) >> 16);
+    unsigned int useconds = (info->timestamp.second & 0x0000FFFF) * 1000000 / 65536;
+    dbg("Timestamp option: %ld sec %d usec\n", seconds, useconds);
+  }
 
-    handoff_indicator_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_HANDOFF_INDICATOR);
-    if (handoff_indicator_opt) {
-        dbg("Handoff Indicator option: %d\n", handoff_indicator_opt->ip6hi_hi);
-    }
+  handoff_indicator_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_HANDOFF_INDICATOR);
+  if (handoff_indicator_opt) {
+    dbg("Handoff Indicator option: %d\n", handoff_indicator_opt->ip6hi_hi);
+  }
 
-    access_technology_type_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_ACCESS_TECHNOLOGY_TYPE);
-    if (access_technology_type_opt) {
-        dbg("Access Technology Type option: %d\n", access_technology_type_opt->ip6att_att);
-    }
+  access_technology_type_opt = mh_opt(&pba->ip6mhba_hdr, &mh_opts, IP6_MHOPT_ACCESS_TECHNOLOGY_TYPE);
+  if (access_technology_type_opt) {
+    dbg("Access Technology Type option: %d\n", access_technology_type_opt->ip6att_att);
+  }
 
-    info->seqno = ntohs(pba->ip6mhba_seqno);
-    info->PBA_flags = ntohs(pba->ip6mhba_flags);
-    info->lifetime.tv_sec = ntohs(pba->ip6mhba_lifetime) << 2;
-    dbg("PBA FLAGS      : %04X\n", info->PBA_flags);
-    dbg("PBA Lifetime   : %d (%d seconds)\n", pba->ip6mhba_lifetime, info->lifetime.tv_sec);
-    dbg("PBA Sequence No: %d\n", info->seqno);
-    info->msg_event = hasPBA;
-    dbg("FSM Message Event: %d\n", info->msg_event);
-    return 0;
+  info->seqno = ntohs(pba->ip6mhba_seqno);
+  info->PBA_flags = ntohs(pba->ip6mhba_flags);
+  info->lifetime.tv_sec = ntohs(pba->ip6mhba_lifetime) << 2;
+  dbg("PBA FLAGS      : %04X\n", info->PBA_flags);
+  dbg("PBA Lifetime   : %d (%d seconds)\n", pba->ip6mhba_lifetime, info->lifetime.tv_sec);
+  dbg("PBA Sequence No: %d\n", info->seqno);
+  info->msg_event = hasPBA;
+  dbg("FSM Message Event: %d\n", info->msg_event);
+  return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int icmp_rs_parse(msg_info_t * info, __attribute__ ((unused)) struct nd_router_solicit *rs, const struct in6_addr *saddr, const struct in6_addr *daddr, int iif, int hoplimit)
 {
-    bzero(info, sizeof(msg_info_t));
+  bzero(info, sizeof(msg_info_t));
     //info->ns_target = ns->nd_ns_target;
-    info->hoplimit = hoplimit;
-    info->msg_event = hasRS;
-    info->src = *saddr;
-    info->dst = *daddr;
-    info->iif = iif;
-    info->addrs.src = &info->src;
-    info->addrs.dst = &info->dst;
+  info->hoplimit = hoplimit;
+  info->msg_event = hasRS;
+  info->src = *saddr;
+  info->dst = *daddr;
+  info->iif = iif;
+  info->addrs.src = &info->src;
+  info->addrs.dst = &info->dst;
     //Calculated fields
-    info->mn_iid = get_node_id(&info->src);
-    dbg("MN IID: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_iid));
-    return 0;
+  info->mn_iid = get_node_id(&info->src);
+  dbg("MN IID: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&info->mn_iid));
+  return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int icmp_na_parse(msg_info_t * info, struct nd_neighbor_advert *na, const struct in6_addr *saddr, const struct in6_addr *daddr, int iif, int hoplimit)
 {
-    bzero(info, sizeof(msg_info_t));
-    info->na_target = na->nd_na_target;
-    info->hoplimit = hoplimit;
-    info->msg_event = hasNA;
-    info->src = *saddr;
-    info->dst = *daddr;
-    info->iif = iif;
-    info->addrs.src = &info->src;
-    info->addrs.dst = &info->dst;
+  bzero(info, sizeof(msg_info_t));
+  info->na_target = na->nd_na_target;
+  info->hoplimit = hoplimit;
+  info->msg_event = hasNA;
+  info->src = *saddr;
+  info->dst = *daddr;
+  info->iif = iif;
+  info->addrs.src = &info->src;
+  info->addrs.dst = &info->dst;
     //Calculated fields
-    info->mn_iid = get_node_id(&info->na_target);
-    info->mn_addr = info->na_target;
-    info->mn_prefix = get_node_prefix(&info->na_target);
-    dbg("NA Target: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&na->nd_na_target));
-    return 0;
+  info->mn_iid = get_node_id(&info->na_target);
+  info->mn_addr = info->na_target;
+  info->mn_prefix = get_node_prefix(&info->na_target);
+  struct in6_addr mn_hwaddress = EUI64_to_EUI48(info->mn_iid);
+  info->mn_nai=get_node_nai( mn_hwaddress);
+  dbg("NA Target: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&na->nd_na_target));
+  return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int pmip_mh_send(const struct in6_addr_bundle *addrs, const struct iovec *mh_vec, int iovlen, int oif)
 {
-    struct sockaddr_in6 daddr;
-    struct iovec iov[2 * (IP6_MHOPT_MAX + 1)];
-    struct msghdr msg;
-    struct cmsghdr *cmsg;
-    int cmsglen;
-    struct in6_pktinfo pinfo;
-    int ret = 0, on = 1;
-    struct ip6_mh *mh;
-    int iov_count;
+  struct sockaddr_in6 daddr;
+  struct iovec iov[2 * (IP6_MHOPT_MAX + 1)];
+  struct msghdr msg;
+  struct cmsghdr *cmsg;
+  int cmsglen;
+  struct in6_pktinfo pinfo;
+  int ret = 0, on = 1;
+  struct ip6_mh *mh;
+  int iov_count;
 
-    iov_count = mh_try_pad(mh_vec, iov, iovlen);
+  iov_count = mh_try_pad(mh_vec, iov, iovlen);
 
-    mh = (struct ip6_mh *) iov[0].iov_base;
-    mh->ip6mh_hdrlen = (mh_length(iov, iov_count) >> 3) - 1;
-    dbg("Sending MH type %d\n" "from %x:%x:%x:%x:%x:%x:%x:%x\n" "to %x:%x:%x:%x:%x:%x:%x:%x\n", mh->ip6mh_type, NIP6ADDR(addrs->src), NIP6ADDR(addrs->dst));
+  mh = (struct ip6_mh *) iov[0].iov_base;
+  mh->ip6mh_hdrlen = (mh_length(iov, iov_count) >> 3) - 1;
+  dbg("Sending MH type %d\n" "from %x:%x:%x:%x:%x:%x:%x:%x\n" "to %x:%x:%x:%x:%x:%x:%x:%x\n", mh->ip6mh_type, NIP6ADDR(addrs->src), NIP6ADDR(addrs->dst));
 
-    memset(&daddr, 0, sizeof(struct sockaddr_in6));
-    daddr.sin6_family = AF_INET6;
-    daddr.sin6_addr = *addrs->dst;
-    daddr.sin6_port = htons(IPPROTO_MH);
+  memset(&daddr, 0, sizeof(struct sockaddr_in6));
+  daddr.sin6_family = AF_INET6;
+  daddr.sin6_addr = *addrs->dst;
+  daddr.sin6_port = htons(IPPROTO_MH);
 
-    memset(&pinfo, 0, sizeof(pinfo));
-    pinfo.ipi6_addr = *addrs->src;
-    pinfo.ipi6_ifindex = oif;
+  memset(&pinfo, 0, sizeof(pinfo));
+  pinfo.ipi6_addr = *addrs->src;
+  pinfo.ipi6_ifindex = oif;
 
-    cmsglen = CMSG_SPACE(sizeof(pinfo));
-    cmsg = malloc(cmsglen);
+  cmsglen = CMSG_SPACE(sizeof(pinfo));
+  cmsg = malloc(cmsglen);
 
-    if (cmsg == NULL) {
-        dbg("malloc failed\n");
-        return -ENOMEM;
-    }
-    memset(cmsg, 0, cmsglen);
-    memset(&msg, 0, sizeof(msg));
-    msg.msg_control = cmsg;
-    msg.msg_controllen = cmsglen;
-    msg.msg_iov = iov;
-    msg.msg_iovlen = iov_count;
-    msg.msg_name = (void *) &daddr;
-    msg.msg_namelen = sizeof(daddr);
+  if (cmsg == NULL) {
+    dbg("malloc failed\n");
+    return -ENOMEM;
+  }
+  memset(cmsg, 0, cmsglen);
+  memset(&msg, 0, sizeof(msg));
+  msg.msg_control = cmsg;
+  msg.msg_controllen = cmsglen;
+  msg.msg_iov = iov;
+  msg.msg_iovlen = iov_count;
+  msg.msg_name = (void *) &daddr;
+  msg.msg_namelen = sizeof(daddr);
 
-    cmsg = CMSG_FIRSTHDR(&msg);
-    cmsg->cmsg_len = CMSG_LEN(sizeof(pinfo));
-    cmsg->cmsg_level = IPPROTO_IPV6;
-    cmsg->cmsg_type = IPV6_PKTINFO;
-    memcpy(CMSG_DATA(cmsg), &pinfo, sizeof(pinfo));
+  cmsg = CMSG_FIRSTHDR(&msg);
+  cmsg->cmsg_len = CMSG_LEN(sizeof(pinfo));
+  cmsg->cmsg_level = IPPROTO_IPV6;
+  cmsg->cmsg_type = IPV6_PKTINFO;
+  memcpy(CMSG_DATA(cmsg), &pinfo, sizeof(pinfo));
 
-    pthread_mutex_lock(&mh_sock.send_mutex);
-    setsockopt(mh_sock.fd, IPPROTO_IPV6, IPV6_PKTINFO, &on, sizeof(int));
-    ret = sendmsg(mh_sock.fd, &msg, 0);
-    if (ret < 0) {
-        dbg("sendmsg: %s\n", strerror(errno));
-    }
-    pthread_mutex_unlock(&mh_sock.send_mutex);
-    free(msg.msg_control);
+  pthread_mutex_lock(&mh_sock.send_mutex);
+  setsockopt(mh_sock.fd, IPPROTO_IPV6, IPV6_PKTINFO, &on, sizeof(int));
+  ret = sendmsg(mh_sock.fd, &msg, 0);
+  if (ret < 0) {
+    dbg("sendmsg: %s\n", strerror(errno));
+    dbg("MH was not sent....\n");
+  }else{
     dbg("MH is sent....\n");
-    return ret;
+  }
+  pthread_mutex_unlock(&mh_sock.send_mutex);
+  free(msg.msg_control);
+  return ret;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int mh_send_pbu(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct timespec *lifetime, int oif)
@@ -1056,35 +1093,38 @@ int mh_send_pbu(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
           header of the Proxy Binding Update message.
     */
 
-    int                           iovlen = 1;
-    struct ip6_mh_binding_update *pbu;
-    static struct iovec           mh_vec[2 * (IP6_MHOPT_MAX + 1)];
-    static struct iovec           dummy_mh_vec[2 * (IP6_MHOPT_MAX + 1)];
-    struct timeval                tv;
-    struct timezone               tz;
-    ip6mnid_t                     mn_id;
-    ip6mnid_t                     mn_hardware_address;
-    uint16_t                      p_flag = 1;
-    int                           iov_count;
+          int                           iovlen = 1;
+          struct ip6_mh_binding_update *pbu;
+          static struct iovec           mh_vec[2 * (IP6_MHOPT_MAX + 1)];
+          static struct iovec           dummy_mh_vec[2 * (IP6_MHOPT_MAX + 1)];
+          struct timeval                tv;
+          struct timezone               tz;
+          ip6mnid_t                     mn_id;
+          ip6mnid_t                     mn_hardware_address;
+          uint16_t                      p_flag = 1;
+          int                           iov_count;
+          ip6mn_nai_t                   mn_nai;
 
-    memset((void*)mh_vec       , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
-    memset((void*)dummy_mh_vec , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
+          memset((void*)mh_vec       , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
+          memset((void*)dummy_mh_vec , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
 
-    pbu = mh_create(&mh_vec[0], IP6_MH_TYPE_BU);
-    if (!pbu) {
-        dbg("mh_create(&mh_vec[0], IP6_MH_TYPE_BU) failed\n");
-        return -ENOMEM;
-    }
-    bce->seqno_out        = get_new_pbu_sequence_number();
-    pbu->ip6mhbu_seqno    = htons(bce->seqno_out);
+          pbu = mh_create(&mh_vec[0], IP6_MH_TYPE_BU);
+          if (!pbu) {
+            dbg("mh_create(&mh_vec[0], IP6_MH_TYPE_BU) failed\n");
+            return -ENOMEM;
+          }
+          bce->seqno_out        = get_new_pbu_sequence_number();
+          pbu->ip6mhbu_seqno    = htons(bce->seqno_out);
     pbu->ip6mhbu_flags    = bce->PBU_flags; // no htons since endianess already taken in account in ip6mh.h
     pbu->ip6mhbu_lifetime = htons(lifetime->tv_sec >> 2);
     dbg("Create PBU with lifetime = %d seconds (config = %d seconds)\n", lifetime->tv_sec, conf.PBULifeTime);
     memcpy(&mn_id, &bce->mn_suffix.s6_addr32[2], sizeof(ip6mnid_t));
     memcpy(&mn_hardware_address, &bce->mn_hw_address.s6_addr32[2], sizeof(ip6mnid_t));
+    memcpy(&mn_nai, &bce->mn_nai, sizeof(ip6mn_nai_t));
+
 
     dbg("Create PBU options...\n");
-    mh_create_opt_mobile_node_identifier(&mh_vec[iovlen++], p_flag, &mn_hardware_address);
+    mh_create_opt_mobile_node_identifier(&mh_vec[iovlen++], p_flag, &mn_nai);
     mh_create_opt_home_net_prefix(&mh_vec[iovlen++], &bce->mn_prefix);
     mh_create_opt_handoff_indicator(&mh_vec[iovlen++], IP6_MHOPT_HI_HANDOFF_BETWEEN_MAGS_FOR_SAME_INTERFACE);
     mh_create_opt_access_technology_type(&mh_vec[iovlen++], IP6_MHOPT_ATT_IEEE802_11ABG);
@@ -1093,14 +1133,14 @@ int mh_send_pbu(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
     tz.tz_minuteswest = 0;          /* minutes west of Greenwich */
     tz.tz_dsttime     = 3; //DST_WET;    /* type of DST correction */
     if (gettimeofday(&tv, &tz) == 0) {
-        bce->timestamp.first  = tv.tv_sec >> 16;
-        bce->timestamp.second = (tv.tv_sec & 0x0000FFFF) << 16;
-        bce->timestamp.second += (((tv.tv_usec * 65536)/1000000) & 0x0000FFFF);
-        mh_create_opt_time_stamp(&mh_vec[iovlen++], &bce->timestamp);
+      bce->timestamp.first  = tv.tv_sec >> 16;
+      bce->timestamp.second = (tv.tv_sec & 0x0000FFFF) << 16;
+      bce->timestamp.second += (((tv.tv_usec * 65536)/1000000) & 0x0000FFFF);
+      mh_create_opt_time_stamp(&mh_vec[iovlen++], &bce->timestamp);
     } else {
-        bce->timestamp.first  = 0;
-        bce->timestamp.second = 0;
-        dbg("Timestamp option failed to get time, discard option\n");
+      bce->timestamp.first  = 0;
+      bce->timestamp.second = 0;
+      dbg("Timestamp option failed to get time, discard option\n");
     }
 
     iov_count = mh_try_pad(mh_vec, dummy_mh_vec, iovlen);
@@ -1118,10 +1158,10 @@ int mh_send_pbu(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
     bce->iovlen = iovlen;
     //do not free, keep for retransmission free_iov_data(dummy_mh_vec, iov_count);
     return 0;
-}
+  }
 //---------------------------------------------------------------------------------------------------------------------
-int mh_send_pba(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct timespec *lifetime, int oif)
-{
+  int mh_send_pba(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct timespec *lifetime, int oif)
+  {
     static struct iovec           mh_vec[2 * (IP6_MHOPT_MAX + 1)];
     static struct iovec           dummy_mh_vec[2 * (IP6_MHOPT_MAX + 1)];
     volatile int                  iovlen = 1;
@@ -1130,6 +1170,7 @@ int mh_send_pba(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
     ip6mnid_t                     mn_id;
     ip6mnid_t                     mn_hardware_address;
     int                           iov_count;
+    ip6mn_nai_t                   mn_nai;
 
     //bzero(mh_vec, sizeof(mh_vec));
     memset((void*)mh_vec       , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
@@ -1137,8 +1178,8 @@ int mh_send_pba(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
 
     pba = mh_create(&mh_vec[0], IP6_MH_TYPE_BACK);
     if (!pba) {
-        dbg("mh_create() failed\n");
-        return -ENOMEM;
+      dbg("mh_create() failed\n");
+      return -ENOMEM;
     }
     dbg("Create PBA with lifetime = %d seconds\n", lifetime->tv_sec);
     pba->ip6mhba_status = bce->status;
@@ -1151,7 +1192,10 @@ int mh_send_pba(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
     dbg("Create PBA options....\n");
     memcpy(&mn_id, &bce->mn_suffix.s6_addr32[2], sizeof(ip6mnid_t));
     memcpy(&mn_hardware_address, &bce->mn_hw_address.s6_addr32[2], sizeof(ip6mnid_t));
-    mh_create_opt_mobile_node_identifier(&mh_vec[iovlen++], p_flag, &mn_hardware_address);
+    memcpy(&mn_nai, &bce->mn_nai, sizeof(ip6mn_nai_t));
+
+
+    mh_create_opt_mobile_node_identifier(&mh_vec[iovlen++], p_flag, &mn_nai);
     mh_create_opt_home_net_prefix(&mh_vec[iovlen++], &bce->mn_prefix);
     mh_create_opt_mobile_node_link_layer_identifier(&mh_vec[iovlen++], &mn_id);
     mh_create_opt_time_stamp(&mh_vec[iovlen++], &bce->timestamp);
@@ -1164,4 +1208,4 @@ int mh_send_pba(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
     pmip_mh_send(addrs, dummy_mh_vec, iov_count, oif);
     free_iov_data(dummy_mh_vec, iov_count);
     return 0;
-}
+  }
