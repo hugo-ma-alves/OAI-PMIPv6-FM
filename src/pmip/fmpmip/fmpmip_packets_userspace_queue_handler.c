@@ -236,7 +236,7 @@ void dump_packet(struct  packet packet){
 	int flowLabel= *(&(packet.ip6)->ip6_flow)  & 0x000fffff;
 	int traffic_class= *(&(packet.ip6)->ip6_flow)  >> 20;
 	
-	dbg("==================================\n");
+	dbg("|--------------------------------------------------------------|\n");
 	dbg("Found flow\n");
 	dbg("Ipv6 Origin: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&(packet.ip6)->ip6_src));
 	dbg("Ipv6 Destination:%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&(packet.ip6)->ip6_dst));
@@ -245,7 +245,7 @@ void dump_packet(struct  packet packet){
 	dbg("Transport protocol: %d\n", packet.transport_protocol);
 	dbg("Transport Source Port: %d\n", packet.transport_source_port);
 	dbg("Transport Destination Port: %d\n",packet.transport_destination_port);
-	dbg("==================================\n");
+	dbg("|--------------------------------------------------------------|\n");
 
 }
 
@@ -263,7 +263,7 @@ int schedule_packet(struct  packet packet){
 		packet.transport_destination_port,traffic_class,flowLabel  );
 
 	if(mark>0){
-		add_new_mark((packet.ip6)->ip6_src,(packet.ip6)->ip6_dst, 
+		flowMarker_add_fwmark((packet.ip6)->ip6_src,(packet.ip6)->ip6_dst, 
 			packet.transport_protocol, packet.transport_source_port,
 			packet.transport_destination_port, mark);
 	}

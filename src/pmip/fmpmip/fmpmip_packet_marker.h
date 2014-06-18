@@ -8,11 +8,11 @@
 #include <linux/types.h>
 
 
-int add_new_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
+int flowMarker_add_fwmark(struct in6_addr ip_source,struct in6_addr ip_destination,
 					int transport_protocol, 
 					int transport_protocol_source_port,int transport_protocol_destination_port,uint32_t mark);
 
-int add_delete_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
+int flowMarker_delete_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
 					int transport_protocol, 
 					int transport_protocol_source_port,int transport_protocol_destination_port, uint32_t mark);
 

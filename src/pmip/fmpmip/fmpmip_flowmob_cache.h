@@ -20,13 +20,10 @@
 //-----------------------------------------------------------------------------
 #    include <pthread.h>
 #    include <arpa/inet.h>
-#    include <netinet/in.h>
-//-----------------------------------------------------------------------------
-#    include "tqueue.h"
-#    include "util.h"
-#    include "hash.h"
-//-----------------------------------------------------------------------------
 #    include "pmip_types.h"
+#	 include "fmpmip_flowmob_hash.h"
+
+//-----------------------------------------------------------------------------
 
 typedef struct fmpmip_flow_cache_entry{
 
@@ -76,13 +73,7 @@ protected_fmpmip_flowmob_cache( int flowmob_cache_exists(struct in6_addr *ip6_so
 
 protected_fmpmip_flowmob_cache(  void flowmob_cache_free(fmpmip_flow_cache_entry * fce);)
 
-protected_fmpmip_flowmob_cache( void flowmob_entry_delete(struct in6_addr *ip6_source,
-	struct in6_addr *ip6_destination,
-	uint32_t  transport_protocol ,
-	uint16_t  transport_source_port ,
-	uint16_t  transport_destination_port ,
-	uint8_t             traffic_class,
-	uint32_t            flow_label);)
+protected_fmpmip_flowmob_cache( void flowmob_entry_delete(fmpmip_flow_cache_entry * fce);)
 
 protected_fmpmip_flowmob_cache( int flowmob_cache_iterate(int (*func) (void *, void *), void *arg);)
 

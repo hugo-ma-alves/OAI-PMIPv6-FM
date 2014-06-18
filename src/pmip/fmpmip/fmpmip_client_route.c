@@ -1,6 +1,6 @@
 
 #define PMIP
-#define __FMPMIP_CLIENT_ROUTING_C
+#define __FMPMIP_CLIENT_ROUTE_C
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -165,14 +165,15 @@ int add_route_to_client(struct route *client, struct in6_addr mag_address){
 
 }
 
-void remove_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
+int remove_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
 
 
     int mutex_return_code;
     struct route *client =client_is_in_list(client_nai);
-    
+        int deletedMark =0;
+
     if(client==NULL){
-        return;
+        return deletedMark;
     }
 
     mutex_return_code = pthread_rwlock_wrlock(&client_route_list_lock);
@@ -189,10 +190,12 @@ void remove_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
         if(IN6_ARE_ADDR_EQUAL(&temp->ip6_addr,&mag_address)){
             if(previous==NULL){
                 client->mag=temp->next;
+                deletedMark = temp->mark;
                 free(temp);
                 break;
             }else{
                 previous->next=temp->next;
+                deletedMark = temp->mark;
                 free(temp);
                 break;
             }
@@ -210,6 +213,8 @@ void remove_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
     if(client->mag==NULL){
         remove_client(client_nai);
     }
+
+    return deletedMark;
 
 }
 
@@ -234,7 +239,7 @@ void remove_client(ip6mn_nai_t client_nai){
     while(temp != NULL ){
         if(IN6_ARE_ADDR_EQUAL(&client_nai, &temp->client_nai)){
          if(previous==NULL){
-            list_HEAD = temp->next;
+            list_HEAD = NULL;
         }else{
             previous->next=temp->next;
         }

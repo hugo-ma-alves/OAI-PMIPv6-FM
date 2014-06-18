@@ -799,7 +799,7 @@ int mh_create_opt_home_net_prefix(struct iovec *iov, struct in6_addr *Home_Netwo
     mobile_node_identifier_opt = mh_opt(&pbu->ip6mhbu_hdr, &mh_opts, IP6_MHOPT_MOBILE_NODE_IDENTIFIER);
     if (mobile_node_identifier_opt) {
         //copy
-        //mn_identifier = in6addr_any;
+      memset(&info->mn_nai,0,sizeof(ip6mn_nai_t));
       memcpy(&info->mn_nai, &mobile_node_identifier_opt->ip6mnid_id, sizeof(ip6mn_nai_t));
       int naiSize=sizeof(ip6mn_nai_t);
       char nai[naiSize+1];
@@ -1107,6 +1107,7 @@ int mh_send_pbu(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
 
           memset((void*)mh_vec       , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
           memset((void*)dummy_mh_vec , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
+          memset(&mn_nai,0,sizeof(ip6mn_nai_t));
 
           pbu = mh_create(&mh_vec[0], IP6_MH_TYPE_BU);
           if (!pbu) {
@@ -1175,6 +1176,7 @@ int mh_send_pbu(const struct in6_addr_bundle *addrs, pmip_entry_t * bce, struct 
     //bzero(mh_vec, sizeof(mh_vec));
     memset((void*)mh_vec       , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
     memset((void*)dummy_mh_vec , 0, (2 * (IP6_MHOPT_MAX + 1))*sizeof(struct iovec));
+    memset(&mn_nai,0,sizeof(ip6mn_nai_t));
 
     pba = mh_create(&mh_vec[0], IP6_MH_TYPE_BACK);
     if (!pba) {

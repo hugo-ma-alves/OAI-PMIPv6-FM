@@ -21,8 +21,6 @@
 
 #include "fmpmip_flowmob_hash.h"
 
-#define FLOWMOB_CACHE_BUCKETS              128
-
 
 pthread_rwlock_t flowmob_cache_lock;
 
@@ -50,13 +48,14 @@ int match(struct flow_mob_hash_entry *h,
 
     assert(h);
 
-    if (IN6_ARE_ADDR_EQUAL(&(h->ip6_source), ip6_source)
-        && IN6_ARE_ADDR_EQUAL(&(h->ip6_destination), ip6_destination)
+    if (IN6_ARE_ADDR_EQUAL((h->ip6_source), ip6_source)
+        && IN6_ARE_ADDR_EQUAL((h->ip6_destination), ip6_destination)
         && h->transport_protocol == transport_protocol 
         && h->transport_source_port == transport_source_port
         && h->transport_destination_port == transport_destination_port
         && h->flow_label == flow_label
-        && h->traffic_class == traffic_class ){
+        && h->traffic_class == traffic_class 
+        ){
 
       return 1;
 
@@ -112,7 +111,7 @@ void * flow_mob_hash_get( const struct flow_mob_hash_structure *h,
     hptr = h->hash_buckets[calc_hash(h->buckets,ip6_destination)];
 
     while(hptr) {
-        if (match(hptr, ip6_source,ip6_destination, transport_protocol, 
+        if (match(hptr, ip6_source, ip6_destination, transport_protocol, 
             transport_source_port, transport_destination_port,
             traffic_class,flow_label))
             return hptr->data;
@@ -211,8 +210,8 @@ void flow_mob_hash_delete(const struct flow_mob_hash_structure *h , struct in6_a
     pptr = hptr = head;
     while (hptr) {
         if (match(hptr, ip6_source,ip6_destination, transport_protocol, 
-                transport_source_port, transport_destination_port,
-                traffic_class,flow_label)) {
+            transport_source_port, transport_destination_port,
+            traffic_class,flow_label)) {
             if (hptr != head) 
                 pptr->next = hptr->next;
             else {

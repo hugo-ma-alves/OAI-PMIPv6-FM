@@ -933,7 +933,6 @@ static int pmip_cache_vt_dump(void *data, void *arg)
 	fprintf_b(vh, "Last Sequence Number: ");
 	fprintf(vh->vh_stream, " %u\n", bce->seqno_out);
 	
-	fprintf(vh->vh_stream, "-------------------------------------------------------");
 	fprintf(vh->vh_stream, "\n");
 
 	return 0;
@@ -948,9 +947,16 @@ static int pmip_cache_vt_cmd_pbc(const struct vt_handle *vh, const char *str)
 		fprintf(vh->vh_stream, "unknown args\n");
 		return 0;
 	}
+	if(is_mag()){
+		fprintf_b(vh, "++++++++++++++++++++Binding Update List (MAG) ++++++++++++++++++++\n");
+	}else if(is_ha()){
+		fprintf_b(vh, "++++++++++++++++++++Binding cache (LMA) ++++++++++++++++++++\n");
+	}
+	fprintf_b(vh, "+General Stats:\n");
+	fprintf_b(vh, "     Number of entries: ");
+	fprintf(vh->vh_stream, "%d\n\n",get_pmip_cache_count(BCE_PMIP));
 	
 	pmip_cache_iterate(pmip_cache_vt_dump, &bva);
-	fprintf(vh->vh_stream,"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 	
 	return 0;
 }
@@ -981,25 +987,22 @@ static int fmpmip_flowmob_cache_vt_dump(void *data, void *arg)
 
 	fprintf_bl(vh, "Source Addr %x:%x:%x:%x:%x:%x:%x:%x",
 		NIP6ADDR(&fce->ip6_origin));
-	
-	fprintf_bl(vh, " Dst Addr %x:%x:%x:%x:%x:%x:%x:%x",
+
+	fprintf_bl(vh, " | Destination Addr %x:%x:%x:%x:%x:%x:%x:%x",
 		NIP6ADDR(&fce->ip6_destination));
 
 	fprintf(vh->vh_stream, "\n");
 
-	fprintf_b(vh, " Transport protocol ");
+	fprintf_b(vh, "Transport protocol ");
 	fprintf(vh->vh_stream, "%s\n",(fce->transport_protocol == IPPROTO_TCP) ? "TCP" :
 		(fce->transport_protocol == IPPROTO_UDP) ? "UDP" :
-		"(unknown)");
+		"(UNKNOW)");
 
 	fprintf_b(vh, "Dest Port ");
 	fprintf(vh->vh_stream,"%d\n",fce->transport_destination_port);
-	
+
 	fprintf_b(vh, "Src Port ");
 	fprintf(vh->vh_stream,"%d\n",fce->transport_source_port);
-
-	fprintf_b(vh, "Mark ");
-	fprintf(vh->vh_stream,"%d\n",fce->mark);
 
 	fprintf_b(vh, "Flow Label ");
 	fprintf(vh->vh_stream,"%d\n",fce->flow_label);
@@ -1007,6 +1010,19 @@ static int fmpmip_flowmob_cache_vt_dump(void *data, void *arg)
 	fprintf_b(vh, "Traffic class ");
 	fprintf(vh->vh_stream,"%d\n",fce->traffic_class);
 
+	fprintf_b(vh, "FWMark ");
+	fprintf(vh->vh_stream,"%d\n",fce->mark);
+
+	fprintf_b(vh, "BID ");
+	fprintf(vh->vh_stream,"%d\n",fce->BID);
+
+
+	int naiSize=sizeof(ip6mn_nai_t);
+	char nai[naiSize+1];
+	nai[naiSize]='\0';
+	memcpy(&nai,&fce->client_nai,naiSize);
+	fprintf_b(vh, "Client NAI ");
+	fprintf(vh->vh_stream,"%s\n",nai);
 
 	fprintf(vh->vh_stream, "\n");
 
@@ -1023,7 +1039,14 @@ static int fmpmip_flowmob_cache_vt_cmd_fmbc(const struct vt_handle *vh, const ch
 		return 0;
 	}
 
+	fprintf_b(vh, "++++++++++++++++++++Flow Mobility Cache++++++++++++++++++++\n");
+	fprintf_b(vh, "+General Stats:\n");
+	fprintf_b(vh, "     Number of flows: ");
+	fprintf(vh->vh_stream, "%d\n",flowmob_cache_get_count());
+
 	flowmob_cache_iterate(fmpmip_flowmob_cache_vt_dump, &bva);
+
+
 	return 0;
 }
 
@@ -1076,6 +1099,8 @@ static int fmpmip_client_routes_vt_cmd_fmbc(const struct vt_handle *vh, const ch
 		fprintf(vh->vh_stream, "unknown args\n");
 		return 0;
 	}
+
+	fprintf_b(vh, "++++++++++++++++++++ Avaiable routes to MN's ++++++++++++++++++++\n");
 
 	client_route_iterate(fmpmip_client_routes_vt_dump, &bva);
 	return 0;

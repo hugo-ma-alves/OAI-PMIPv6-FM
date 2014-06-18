@@ -9,7 +9,7 @@
 #include <netinet/udp.h>			/* for UDP header*/
 
 
-int add_new_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
+int flowMarker_add_fwmark(struct in6_addr ip_source,struct in6_addr ip_destination,
 	int transport_protocol, 
 	int transport_protocol_source_port,int transport_protocol_destination_port, uint32_t mark){
 	
@@ -46,7 +46,7 @@ int add_new_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
 
 }
 
-int add_delete_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
+int flowMarker_delete_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
 	int transport_protocol, 
 	int transport_protocol_source_port,int transport_protocol_destination_port,uint32_t mark){
 	
@@ -58,7 +58,7 @@ int add_delete_mark(struct in6_addr ip_source,struct in6_addr ip_destination,
 	}
 	
 	char buff[350];
-	sprintf(buff, "ip6tables -t mangle -D FORWARD  -s %x:%x:%x:%x:%x:%x:%x:%x -d %x:%x:%x:%x:%x:%x:%x:%x -p %s --dport %d --sport %d -j MARK --set-mark %d ",
+	sprintf(buff, "ip6tables -t mangle -D PREROUTING  -s %x:%x:%x:%x:%x:%x:%x:%x -d %x:%x:%x:%x:%x:%x:%x:%x -p %s --dport %d --sport %d -j MARK --set-mark %d ",
 		NIP6ADDR(&ip_source),NIP6ADDR(&ip_destination),
 		transport_protocol_string, transport_protocol_destination_port,
 		transport_protocol_source_port, mark );

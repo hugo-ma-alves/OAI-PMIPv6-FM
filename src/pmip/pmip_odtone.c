@@ -445,13 +445,16 @@ int send_event_subscribe_request(void)
     evt_list = evt_list | EVT_LIST_LINK_UP;
     evt_list = evt_list | EVT_LIST_LINK_DOWN;
     // evt_list = evt_list | EVT_LIST_LINK_GOING_DOWN;
-    // evt_list = evt_list | EVT_LIST_LINK_PARAMETERS_REPORT;
+    //evt_list = evt_list | EVT_LIST_LINK_PARAMETERS_REPORT;
 
     msgToBuild->MIHF_Event_List.Type = TLV_EVENT_LIST;
     msgToBuild->MIHF_Event_List.Length = sizeof(MIH_C_MIHF_Evt_List)-2;
 
     msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[3] = evt_list;
-    for(i=0;i<3;i++){msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[i] = VALUE_NULL;}
+    msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[2]= VALUE_NULL; //Reserved values
+    msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[1]= VALUE_NULL; //Reserved values
+    msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[0]= VALUE_NULL; //Reserved values
+    //for(i=0;i<3;i++){msgToBuild->MIHF_Event_List.Evt_List_Data.Evt_List_Oct[i] = VALUE_NULL;}
 
     res=send_to_mih(str,prim_length);
     if (res<0)

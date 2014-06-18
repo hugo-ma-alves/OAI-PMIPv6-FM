@@ -101,7 +101,7 @@ protected_pmip_hnp_cache(struct in6_addr lma_mnid_hnp_map(struct in6_addr mnid, 
 * \param[in]  result     Status of the search, 0 if success, else -1
 * \return   A valid NAI if the mobile node id is already associated with a prefix in the hnp map.
 */
-protected_pmip_hnp_cache( ip6mn_nai_t mn_nai_hnp_map(struct in6_addr mnid, int *result));
+protected_pmip_hnp_cache( ip6mn_nai_t mn_nai_hnp_map(struct in6_addr mnid, int *result);)
 
 /*! \fn int pmip_mn_to_hnp_cache_init(void)
 * \brief Initialize the home network prefix cache, if RADIUS is not configured the matching between MAC addresse and prefixes is read from a FILE "match".

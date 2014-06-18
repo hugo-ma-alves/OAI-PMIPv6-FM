@@ -35,6 +35,7 @@
 #include "pmip_hnp_cache.h"
 #include "pmip_lma_proc.h"
 #include "pmip_tunnel.h"
+#include "fmpmip/fmpmip_client_route.h"
 //---------------------------------------------------------------------------------------------------------------------
 #include "rtnl.h"
 #ifdef ENABLE_VT
@@ -80,6 +81,7 @@ int lma_reg(pmip_entry_t * bce)
         addrs.dst = &bce->mn_serv_mag_addr;
         mh_send_pba(&addrs, bce, &bce->lifetime, 0);
         add_client_route(bce->mn_nai,bce->mn_serv_mag_addr);
+        flowScheduler_link_up(bce->mn_nai,bce->mn_serv_mag_addr);
         return 0;
     } else {
         dbg("WARNING parameter pmip_entry_t * bce is NULL\n");
@@ -115,7 +117,8 @@ int lma_dereg(pmip_entry_t * bce, msg_info_t * info, int propagate)
         lma_remove_route(get_mn_addr(bce), bce->tunnel);
         //decrement users of old tunnel.
         pmip_tunnel_del(bce->tunnel);
-        remove_client_route(bce->mn_nai,bce->mn_serv_mag_addr);
+        int deletedFwMark = remove_client_route(bce->mn_nai,bce->mn_serv_mag_addr);
+        flowScheduler_link_down(bce->mn_nai,bce->mn_serv_mag_addr);
         if (propagate) {
             dbg("Create PBA for deregistration for MAG (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(&bce->mn_serv_mag_addr));
             struct in6_addr_bundle addrs;

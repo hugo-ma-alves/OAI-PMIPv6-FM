@@ -186,8 +186,8 @@ pmip_entry_t *pmip_cache_add(pmip_entry_t * bce)
     assert(bce);
     bce->unreach = 0;
     mutex_return_code = pthread_rwlock_wrlock(&pmip_lock);
-    bce->BID=last_BID;
     last_BID++;
+    bce->BID=last_BID;
 
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_wrlock(&pmip_lock) %s\n", strerror(mutex_return_code));
