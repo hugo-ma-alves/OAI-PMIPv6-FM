@@ -33,7 +33,6 @@ static int find_NAI(void *pmip_cache_entry,  void *mn_nai_ip)
         association_struct->BID= bce->BID;
         return 1;
     }
-    dbg("Did not found NAI \n");
     return 0;
 
 }

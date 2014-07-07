@@ -96,13 +96,13 @@ void flow_mob_hash_cleanup(struct flow_mob_hash_structure *h)
 }
 
 void * flow_mob_hash_get( const struct flow_mob_hash_structure *h, 
-   struct in6_addr *ip6_source,
-   struct in6_addr *ip6_destination,
-   uint32_t  transport_protocol ,
-   uint16_t  transport_source_port ,
-   uint16_t  transport_destination_port ,
-   uint8_t             traffic_class,
-   uint32_t            flow_label)
+ struct in6_addr *ip6_source,
+ struct in6_addr *ip6_destination,
+ uint32_t  transport_protocol ,
+ uint16_t  transport_source_port ,
+ uint16_t  transport_destination_port ,
+ uint8_t             traffic_class,
+ uint32_t            flow_label)
 {
     struct flow_mob_hash_entry *hptr = NULL;
     
@@ -113,11 +113,12 @@ void * flow_mob_hash_get( const struct flow_mob_hash_structure *h,
     while(hptr) {
         if (match(hptr, ip6_source, ip6_destination, transport_protocol, 
             transport_source_port, transport_destination_port,
-            traffic_class,flow_label))
+            traffic_class,flow_label)){
             return hptr->data;
-        hptr = hptr->next;
     }
-    return NULL;
+    hptr = hptr->next;
+}
+return NULL;
 }
 
 int flow_mob_hash_add(const struct flow_mob_hash_structure *h, void *data , struct in6_addr *ip6_source,
