@@ -27,28 +27,27 @@ struct mag{
 
 struct route{
 	ip6mn_nai_t client_nai;
+	pthread_rwlock_t lock;
 	struct mag *mag;
 	struct route * next;
+
 };
 
 protected_client_routing(pthread_rwlock_t client_route_list_lock;)
 
 
+public_client_routing (int client_route_init();)
 public_client_routing (int add_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address);)
-public_client_routing (int client_route_init());
 public_client_routing (int client_route_iterate( int (*func)(void *, void *), void *arg);)
 public_client_routing (int remove_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address);)
-public_client_routing (void remove_client(ip6mn_nai_t client_nai);)
 
-public_client_routing( struct route * client_is_in_list(ip6mn_nai_t client_nai);)
+public_client_routing (void client_route_release_entry(struct route * route);)
+public_client_routing( struct route * get_route_for_client(ip6mn_nai_t client_nai);)
 
-private_client_routing( struct route * getClient(ip6mn_nai_t client_nai);)
-private_client_routing( int add_new_client(ip6mn_nai_t client_nai, struct route **route);)
 private_client_routing( int get_mag_mark(struct in6_addr mag_address);)
-private_client_routing( int add_route_to_client(struct route *client, struct in6_addr mag_address);)
-
-
-
+private_client_routing (void remove_client(ip6mn_nai_t client_nai);)
+private_client_routing( struct client *add_client_to_list(ip6mn_nai_t client_nai);)
+private_client_routing( int add_mag_to_client(struct mag **mag_list ,struct in6_addr mag_address);)
 
 
 #endif

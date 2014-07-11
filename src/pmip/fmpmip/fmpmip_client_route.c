@@ -15,7 +15,8 @@
 #include <fmpmip/fmpmip_client_route.h>
 
 static struct route * list_HEAD=NULL;
-
+static int    number_of_clients =0;
+static int    number_of_routes  =0;
 
 int client_route_init(){
     int ret=0;
@@ -40,24 +41,25 @@ int add_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
 
     int mutex_return_code;
     int ret=0;
-    struct route *client = NULL;
+    struct route *client = list_HEAD;
+    struct route *tmp = NULL;
+    struct mag *mag_temp = NULL;
 
     mutex_return_code = pthread_rwlock_wrlock(&client_route_list_lock);
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_wrlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
     }
 
-    client = client_is_in_list(client_nai);
+    client = add_client_to_list(client_nai);
+    
+    if(client==NULL){
+        dbg("Error adding client to routes list\n");
+    }else{
+        add_mag_to_client(&(client->mag),mag_address);
+        number_of_routes++;
+    }   
 
-    if(client== NULL){
-        add_new_client(client_nai, &list_HEAD);
-    }
-    if(ret<0){
-        dbg("+++Error adding route cache for client \n");
-        return 0;
-    }
-    client = client_is_in_list(client_nai);
-    add_route_to_client( client, mag_address);
+    dbg("added route to client\n");
 
     mutex_return_code = pthread_rwlock_unlock(&client_route_list_lock);
     if (mutex_return_code != 0) {
@@ -68,193 +70,197 @@ int add_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
 }
 
 
-int add_new_client(ip6mn_nai_t client_nai, struct route **route){
-
-    struct route *temp, *r;
-
-    //empty list
-    if(*route==NULL){
-        temp = (struct route*) malloc ( sizeof ( struct route ) ) ;
-        if(temp==NULL){
-            return -1;
-        }
-        memcpy(&temp->client_nai, &client_nai, sizeof(ip6mn_nai_t));
-        temp->next = NULL ;
-        *route = temp ;        
-    }else{
-        //look for last node
-        temp =*route;
-        while(temp->next != NULL){
-            temp = temp->next;
-        }
-        r= (struct route*) malloc ( sizeof ( struct route ) ) ;
-        if(r==NULL){
-            return -1;
-        }
-        memcpy(&r->client_nai, &client_nai, sizeof(ip6mn_nai_t));
-        r->next = NULL ;
-        temp->next = r;
-    }
-    
-    return 1;
-}
-
-struct route * getClient(ip6mn_nai_t client_nai){
-
-    struct route * temp = list_HEAD;
-    if(temp==NULL){
-        return NULL;
-    }
-    while(temp->next != NULL ){
-        if(IN6_ARE_ADDR_EQUAL(&client_nai, &temp->client_nai)){
-            return temp;
-        }
-        temp = temp->next;
-    }
-    return temp;
-}
-
-
-struct route * client_is_in_list(ip6mn_nai_t client_nai){
-
-    struct route * temp = list_HEAD;
-    if(temp==NULL){
-        return NULL;
-    }
-    while(temp->next != NULL ){
-        if(IN6_ARE_ADDR_EQUAL(&client_nai, &temp->client_nai)){
-            return temp;
-        }
-        temp = temp->next;
-    }
-    return temp;
-}
-
-
-int add_route_to_client(struct route *client, struct in6_addr mag_address){
-
-
-    struct mag *mag, *m;
-    //empty list
-    if(client->mag==NULL){
-        mag = (struct mag*) malloc ( sizeof ( struct mag ) ) ;
-        memcpy(&mag->ip6_addr, &mag_address, sizeof(struct in6_addr));
-        mag->mark= get_mag_mark(mag_address);
-        mag->next = NULL ;
-        client->mag = mag ;        
-    }else{
-        //look for last node
-        mag = client->mag;
-        if(IN6_ARE_ADDR_EQUAL(&mag->ip6_addr,&mag_address)){
-            return 1;
-        }
-        while(mag->next != NULL){
-            mag = mag->next;
-            //check  if its already there
-            if(IN6_ARE_ADDR_EQUAL(&mag->ip6_addr,&mag_address)){
-                return 1;
-            }
-        }
-        m = (struct mag*) malloc ( sizeof ( struct mag ) ) ;
-        memcpy(&m->ip6_addr, &mag_address, sizeof(struct in6_addr));
-        m->mark= get_mag_mark(mag_address);
-        m->next = NULL ;
-        mag->next = m;
-    }
-    return 1;
-
-}
-
-int remove_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
-
+struct route * get_route_for_client(ip6mn_nai_t client_nai){
 
     int mutex_return_code;
-    struct route *client =client_is_in_list(client_nai);
-        int deletedMark =0;
-
-    if(client==NULL){
-        return deletedMark;
-    }
+    struct route *client = list_HEAD;
+    struct route *tmp = NULL;
 
     mutex_return_code = pthread_rwlock_wrlock(&client_route_list_lock);
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_wrlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
     }
 
-    struct mag *temp, *previous;
-    temp = client->mag;
-    previous=NULL;
-
-    while(temp != NULL){
-
-        if(IN6_ARE_ADDR_EQUAL(&temp->ip6_addr,&mag_address)){
-            if(previous==NULL){
-                client->mag=temp->next;
-                deletedMark = temp->mark;
-                free(temp);
-                break;
-            }else{
-                previous->next=temp->next;
-                deletedMark = temp->mark;
-                free(temp);
-                break;
-            }
-        }else{
-            previous=temp;
-            temp = temp->next;
+    //Check if the client exists
+    while(client != NULL){
+        if(memcmp(&client->client_nai, &client_nai, sizeof(ip6mn_nai_t)) ==0 ){
+            break;
         }
-        
+        client= client->next;
     }
+
+    if (client) {
+        mutex_return_code = pthread_rwlock_wrlock(&client->lock);
+        if (mutex_return_code != 0) {
+          dbg("pthread_rwlock_wrlock(&client->lock) %s\n", strerror(mutex_return_code));
+      }
+  } else {
     mutex_return_code = pthread_rwlock_unlock(&client_route_list_lock);
     if (mutex_return_code != 0) {
-        dbg("pthread_rwlock_unlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
+      dbg("pthread_rwlock_unlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
+  }
+}
+
+return client;
+}
+
+struct client *add_client_to_list(ip6mn_nai_t client_nai){
+
+    struct route *client = list_HEAD;
+    struct route *tmp = NULL;
+
+    //Check if the client exists
+    while(client != NULL){
+        if(memcmp(&client->client_nai, &client_nai, sizeof(ip6mn_nai_t)) ==0 ){
+            return client;
+        }
+        client= client->next;
+    }
+
+    if(client == NULL){
+        tmp=(struct route *)malloc(sizeof(struct route));
+        if(tmp==NULL){
+            dbg("Error malloc client route");
+            return NULL;
+        }
+        memcpy(&tmp->client_nai,&client_nai, sizeof(ip6mn_nai_t));
+        tmp->next=NULL;
+        tmp->mag=NULL;
+        if (pthread_rwlock_init(&tmp->lock, NULL)) {
+          free(tmp);
+          dbg("Error malloc client route");
+          return NULL;
+      }
+      if(list_HEAD==NULL){
+        list_HEAD = tmp;
+        list_HEAD->next=NULL;
+    }else{
+        tmp->next=list_HEAD;
+        list_HEAD=tmp;
+    }
+}
+
+return tmp;
+}
+
+int add_mag_to_client(struct mag **mag_list ,struct in6_addr mag_address){
+
+    struct mag *tmp =*mag_list;
+    struct mag *new_mag =NULL;
+
+    while(tmp!=NULL){
+        if(IN6_ARE_ADDR_EQUAL(&tmp->ip6_addr,&mag_address)){
+            return 1;
+        }
+        tmp= tmp->next;
+    }
+
+    new_mag=(struct mag *)malloc(sizeof(struct mag));
+    new_mag->next=NULL;
+    new_mag->mark= get_mag_mark(mag_address);
+    memcpy(&new_mag->ip6_addr, &mag_address, sizeof(struct in6_addr));
+
+    if(*mag_list==NULL){
+        *mag_list = new_mag;
+    }else{
+        new_mag->next= *mag_list;
+        *mag_list = new_mag;
+    }
+    return 1;
+}
+
+
+void client_route_release_entry(struct route * route){
+
+   int mutex_return_code;
+   assert(route);
+   mutex_return_code = pthread_rwlock_unlock(&route->lock);
+   if (mutex_return_code != 0) {
+      dbg("pthread_rwlock_unlock(&route->lock) %s\n", strerror(mutex_return_code));
+  }
+  mutex_return_code = pthread_rwlock_unlock(&client_route_list_lock);
+  if (mutex_return_code != 0) {
+      dbg("pthread_rwlock_unlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
+  }
+}
+
+
+int remove_client_route(ip6mn_nai_t client_nai, struct in6_addr mag_address){
+    int mutex_return_code;
+    int ret=0;
+    struct route *client = list_HEAD;
+    struct mag *tmp = NULL;
+    struct mag *mag_prev = NULL;
+
+    mutex_return_code = pthread_rwlock_wrlock(&client_route_list_lock);
+    if (mutex_return_code != 0) {
+        dbg("pthread_rwlock_wrlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
+    }
+
+    while(client != NULL){
+        if(memcmp(&client->client_nai, &client_nai, sizeof(ip6mn_nai_t))==0 ){
+            break;
+        }
+        client= client->next;
+    }
+
+    tmp=client->mag;
+    while(tmp!=NULL){
+        if(IN6_ARE_ADDR_EQUAL(&tmp->ip6_addr,&mag_address)){
+            break;
+        }
+        mag_prev= tmp;
+        tmp=tmp->next;
+    }
+
+    if(mag_prev==NULL){
+        client->mag= tmp->next;
+    }else{
+        mag_prev->next= tmp->next;
     }
 
     if(client->mag==NULL){
         remove_client(client_nai);
     }
 
-    return deletedMark;
+    dbg("Removed route to client\n");
+    mutex_return_code = pthread_rwlock_unlock(&client_route_list_lock);
+    if (mutex_return_code != 0) {
+        dbg("pthread_rwlock_unlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
+    }
 
+    return 1;
 }
 
 
 void remove_client(ip6mn_nai_t client_nai){
-
     int mutex_return_code;
-    //return;
-    struct route * temp = list_HEAD;
-    struct route * previous;
+    struct route *client = list_HEAD;
+    struct route *client_prev = NULL;
 
-    previous=NULL;
-    if(temp==NULL){
-        return ;
-    }
+    //asumes someone has called lock on the list!!
 
-    mutex_return_code = pthread_rwlock_wrlock(&client_route_list_lock);
-    if (mutex_return_code != 0) {
-        dbg("pthread_rwlock_wrlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
-    }
-    
-    while(temp != NULL ){
-        if(IN6_ARE_ADDR_EQUAL(&client_nai, &temp->client_nai)){
-         if(previous==NULL){
-            list_HEAD = NULL;
-        }else{
-            previous->next=temp->next;
+    while(client != NULL){
+        if(memcmp(&client->client_nai, &client_nai, sizeof(ip6mn_nai_t))==0 ){
+            break;
         }
-        break;
+        client_prev= client;
+        client= client->next;
     }
-    previous=temp;
-    temp = temp->next;
-}
 
-free(temp);
+    //Removes(free) only the client, not his mag's
 
-mutex_return_code = pthread_rwlock_unlock(&client_route_list_lock);
-if (mutex_return_code != 0) {
-    dbg("pthread_rwlock_unlock(&client_route_list_lock) %s\n", strerror(mutex_return_code));
-}
+    //rearrange client list
+    if(client_prev==NULL){
+        list_HEAD = client->next;
+    }else{
+        client_prev->next=client->next;
+    }
+    free(client);
+    number_of_clients--;
+    dbg("Removed Client from client routes list\n");
+  
+
 }
 
 

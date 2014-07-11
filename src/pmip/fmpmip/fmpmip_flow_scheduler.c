@@ -170,7 +170,7 @@ int get_flow_fwmark(ip6mn_nai_t mn_nai){
 
     int mark=0;
     int r = rand() % 20;
-    struct route *client = client_is_in_list(mn_nai);
+    struct route *client = get_route_for_client(mn_nai);
     if(client==NULL){
         return mark;
     }
@@ -184,6 +184,6 @@ int get_flow_fwmark(ip6mn_nai_t mn_nai){
         }
         mag_list = mag_list->next;
     }
-
+    client_route_release_entry(client);
     return mark;
 }
