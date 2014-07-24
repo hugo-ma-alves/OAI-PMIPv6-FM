@@ -478,6 +478,7 @@ static void msg_handler_associate(unsigned char * mn_iidP)
     memset(&msg, 0, sizeof(msg_info_t));
     msg.mn_iid = EUI48_to_EUI64(macAddress48);
     msg.iif = g_pcap_iif;
+    msg.mn_nai = get_node_nai(macAddress48);
     msg.msg_event = hasODTONELinkEvent;
     mag_fsm(&msg);
 }

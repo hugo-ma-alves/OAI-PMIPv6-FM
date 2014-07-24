@@ -150,7 +150,8 @@ int lma_update_binding_entry(pmip_entry_t * bce, msg_info_t * info)
             bce->our_addr = conf.OurAddress;
             bce->mn_suffix = info->mn_iid;
             bce->mn_hw_address = EUI64_to_EUI48(info->mn_iid);
-            memcpy(&bce->mn_nai,&info->mn_nai,sizeof(ip6mn_nai_t));
+            bce->mn_nai= info->mn_nai;//TEST
+            //memcpy(&bce->mn_nai,&info->mn_nai,sizeof(ip6mn_nai_t));
 
             dbg("searching for the prefix for a new BCE entry...\n");
             r_tmp = lma_mnid_hnp_map(bce->mn_hw_address, &result);

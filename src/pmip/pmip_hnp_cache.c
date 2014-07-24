@@ -186,7 +186,7 @@ struct in6_addr lma_mnid_hnp_map(struct in6_addr mnid, int *result)
     while (j < g_mn_count) {
         dbg("Comparing with MNID  %x:%x:%x:%x:%x:%x:%x:%x  \n", NIP6ADDR(&g_mn_hn_map[j].mn_iid));
         if (IN6_ARE_ADDR_EQUAL(&g_mn_hn_map[j].mn_iid, &mnid)) {
-            dbg("Found the nai\n");
+            //dbg("Found the nai\n");
             *result = 1;
             return (g_mn_hn_map[j].mn_nai);
         }
@@ -303,6 +303,7 @@ struct in6_addr mnid_hnp_map(struct in6_addr mnid, ip6mn_nai_t *mn_nai  , int *a
         if (IN6_ARE_ADDR_EQUAL(&g_mn_hn_map[j].mn_iid, &mnid)) {
             //l_flag = 1;
             dbg("%x:%x:%x:%x:%x:%x:%x:%x found the prefix \n", NIP6ADDR(&g_mn_hn_map[j].mn_prefix));
+            memcpy(mn_nai, &g_mn_hn_map[j].mn_nai, sizeof(ip6mn_nai_t));
             *aaa_result = 10;
             return (g_mn_hn_map[j].mn_prefix);
         }
@@ -386,7 +387,7 @@ struct in6_addr mnid_hnp_map(struct in6_addr mnid, ip6mn_nai_t *mn_nai  , int *a
                             size = sizeof(ip6mn_nai_t);
                             dbg("MN NAI truncated, MAX value is 63 bytes\n");
                         }
-                        dbg("MN NAI SIZE AFTER RADIUS %d\n",size);
+                        dbg("MN NAI size %d\n",size);
                         memcpy(mn_nai,vp->strvalue, size);
                                                 
                     }

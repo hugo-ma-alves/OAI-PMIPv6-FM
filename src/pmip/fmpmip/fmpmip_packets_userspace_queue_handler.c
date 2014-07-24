@@ -68,9 +68,18 @@ static void *loop_queue(__attribute__ ((unused)) void *arg)
 
 	fd = nfq_fd(h);
 
-	while ((rv = recv(fd, buf, sizeof(buf), 0)) && rv >= 0) {
-		nfq_handle_packet(h, buf, rv);
+	while ((rv = recv(fd, buf, sizeof(buf), 0)) ) {
+		if( rv >= 0){
+			nfq_handle_packet(h, buf, rv);
+		}else{
+			dbg("The socket buffer is full\n");
+			dbg("The app is to slow to process all the packets\n");
+
+		}
 	}
+
+	dbg("NfQueue loop stoped!!!!  The socket buffer is full\n");
+	dbg("The app is to slow to process all the packets\n");
 
 	dbg("Stoping the processing of the queue %d\n",packetsQueueID);
 	nfq_destroy_queue(qh);

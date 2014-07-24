@@ -73,10 +73,6 @@ typedef struct {
      char nai[NAI_SIZE];
 } ip6mn_nai_t;
 
-/*typedef struct {
-     char *nai;
-     int size;
-} ip6mn_nai_tt;*/
 
 /*! \struct  ip6ts_t
 * \brief Timestamp structure.
@@ -94,7 +90,7 @@ struct ip6_mh_opt_mobile_node_identifier_t {
     __u8                ip6mnid_type;   /*!< \brief MN-ID-OPTION-TYPE has been assigned value 8 by the IANA. It is an  8-bit identifier of the type mobility option.*/
     __u8                ip6mnid_len;    /*!< \brief 8-bit unsigned integer, representing the length in octets of the Subtype and Identifier fields.*/
     __u8                ip6mnid_subtype;/*!< \brief Mobile interface identifier subtype .*/
-    ip6mn_nai_t           ip6mnid_id;     /*!< \brief Mobile interface identifier (NOT RFC4283).*/
+    ip6mn_nai_t         ip6mnid_id;     /*!< \brief Mobile interface identifier (NOT RFC4283).*/
 } __attribute__ ((__packed__));
 typedef struct ip6_mh_opt_mobile_node_identifier_t ip6_mh_opt_mobile_node_identifier_t;
 
