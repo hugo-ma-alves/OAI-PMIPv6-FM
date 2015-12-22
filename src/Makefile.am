@@ -80,6 +80,8 @@ mip6d_SOURCES = pmgr.c pmgr.h defpath.h \
 
 mip6d_LDADD= 
 
+mip6d_LDADD= 
+
 if ENABLE_VT
 mip6d_SOURCES += vt.c vt.h
 endif
@@ -90,6 +92,9 @@ endif
 
 if ENABLE_FLOW_MOBILITY
 mip6d_LDADD += -lnfnetlink  -lnetfilter_queue
+<<<<<<< HEAD
+mip6d_SOURCES += ./pmip/fmpmip/fmpmip_packet_marker.h ./pmip/fmpmip/fmpmip_packet_marker.c ./pmip/fmpmip/flowmob_hash_struct.h ./pmip/fmpmip/flowmob_hash_struct.c 
+=======
 mip6d_SOURCES += ./pmip/fmpmip/fmpmip_packets_userspace_queue_handler.h \
 				./pmip/fmpmip/fmpmip_packets_userspace_queue_handler.c \
 				./pmip/fmpmip/fmpmip_flowmob_hash.h \
@@ -104,6 +109,7 @@ mip6d_SOURCES += ./pmip/fmpmip/fmpmip_packets_userspace_queue_handler.h \
 				./pmip/fmpmip/fmpmip_client_route.c
 
 
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 endif
 
 if BUILTIN_CRYPTO

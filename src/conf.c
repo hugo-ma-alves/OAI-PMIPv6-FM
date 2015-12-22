@@ -382,6 +382,11 @@ void conf_show(struct mip6_config *c)
 		CONF_BOOL_STR(c->KeyMngMobCapability));
 	dbg("UseMnHaIPsec = %s\n", CONF_BOOL_STR(c->UseMnHaIPsec));
 
+	/*VT termninal options*/
+#ifdef ENABLE_VT
+	dbg("VT Hostname %s\n", c->vt_hostname);
+	dbg("VT Port: %s\n", c->vt_service);
+#endif
 
 	switch (c->mip6_entity) {
 		case MIP6_ENTITY_MN:
@@ -582,6 +587,12 @@ void conf_show(struct mip6_config *c)
 		dbg("MIHF client User name: %s\n", c->MIHFClientUserName );
 		dbg("MIHF ID: %s\n", c->MIHF_ID );
 		dbg("MIHF UDP PORT: %d\n", c->MIHFPort);
+#endif
+
+#ifdef ENABLE_FLOW_MOBILITY
+		dbg("Printing Flow mob configurations\n");
+		dbg("Netfilter usespace queue number: %d\n", c->UserSpacePacketsQueue);
+
 #endif
 
 		break;

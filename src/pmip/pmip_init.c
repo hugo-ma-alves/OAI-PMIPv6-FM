@@ -59,9 +59,14 @@
 #endif
 
 #ifdef ENABLE_FLOW_MOBILITY
+<<<<<<< HEAD
+#   include "fmpmip/flowmob_hash_struct.h"
+#   include "fmpmip/fmpmip_packet_marker.h"
+=======
 #   include "fmpmip/fmpmip_flowmob_cache.h"
 #   include "fmpmip/fmpmip_packets_userspace_queue_handler.h"
 #   include "fmpmip/fmpmip_client_route.h"
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 #endif
 
 #define IPV6_ALL_SOLICITED_MCAST_ADDR 68
@@ -296,7 +301,11 @@ int pmip_lma_init(void)
     dbg("Entity Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.OurAddress));
     //dbg("Initializing the PBU handler\n");
     //To capture PBU message.
+<<<<<<< HEAD
+    //mh_handler_reg(IP6_MH_TYPE_BU, &pmip_lma_pbu_handler);
+=======
    // mh_handler_reg(IP6_MH_TYPE_BU, &pmip_lma_pbu_handler);
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 
 #ifdef ENABLE_FLOW_MOBILITY
     int ret=0;
@@ -314,7 +323,12 @@ int pmip_lma_init(void)
         return -1;
     }
 
+<<<<<<< HEAD
+#endif
+    return 0;
+=======
 
 #endif
 return 0;
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 }
