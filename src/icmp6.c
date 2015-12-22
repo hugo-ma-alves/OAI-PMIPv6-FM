@@ -244,6 +244,9 @@ int icmp6_init(void)
 		ICMP6_FILTER_SETPASS(ND_NEIGHBOR_SOLICIT, &filter);
 		ICMP6_FILTER_SETPASS(ND_NEIGHBOR_ADVERT, &filter);
 		ICMP6_FILTER_SETPASS(ND_ROUTER_SOLICIT, &filter);
+		//Bind the socket to the MAG interface connected to clients
+		setsockopt(icmp6_sock.fd, SOL_SOCKET, SO_BINDTODEVICE, conf.MagDeviceIngress,  strlen(conf.MagDeviceIngress));
+		dbg("Binding ICMP6 raw socket to %s interface\n",conf.MagDeviceIngress );
 	}
 
 	if (setsockopt(icmp6_sock.fd, IPPROTO_ICMPV6, ICMP6_FILTER, 

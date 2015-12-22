@@ -35,6 +35,7 @@
 #include "pmip_hnp_cache.h"
 #include "pmip_lma_proc.h"
 #include "pmip_tunnel.h"
+#include "fmpmip/fmpmip_client_route.h"
 //---------------------------------------------------------------------------------------------------------------------
 #include "rtnl.h"
 #ifdef ENABLE_VT
@@ -79,6 +80,8 @@ int lma_reg(pmip_entry_t * bce)
         addrs.src = &conf.OurAddress;
         addrs.dst = &bce->mn_serv_mag_addr;
         mh_send_pba(&addrs, bce, &bce->lifetime, 0);
+        add_client_route(bce->mn_nai,bce->mn_serv_mag_addr);
+        flowScheduler_link_up(bce->mn_nai,bce->mn_serv_mag_addr);
         return 0;
     } else {
         dbg("WARNING parameter pmip_entry_t * bce is NULL\n");
@@ -114,6 +117,8 @@ int lma_dereg(pmip_entry_t * bce, msg_info_t * info, int propagate)
         lma_remove_route(get_mn_addr(bce), bce->tunnel);
         //decrement users of old tunnel.
         pmip_tunnel_del(bce->tunnel);
+        int deletedFwMark = remove_client_route(bce->mn_nai,bce->mn_serv_mag_addr);
+        flowScheduler_link_down(bce->mn_nai,bce->mn_serv_mag_addr);
         if (propagate) {
             dbg("Create PBA for deregistration for MAG (%x:%x:%x:%x:%x:%x:%x:%x)\n", NIP6ADDR(&bce->mn_serv_mag_addr));
             struct in6_addr_bundle addrs;
@@ -145,6 +150,9 @@ int lma_update_binding_entry(pmip_entry_t * bce, msg_info_t * info)
             bce->our_addr = conf.OurAddress;
             bce->mn_suffix = info->mn_iid;
             bce->mn_hw_address = EUI64_to_EUI48(info->mn_iid);
+            bce->mn_nai= info->mn_nai;//TEST
+            //memcpy(&bce->mn_nai,&info->mn_nai,sizeof(ip6mn_nai_t));
+
             dbg("searching for the prefix for a new BCE entry...\n");
             r_tmp = lma_mnid_hnp_map(bce->mn_hw_address, &result);
             if (result >= 0) {
@@ -192,8 +200,8 @@ int lma_update_binding_entry(pmip_entry_t * bce, msg_info_t * info)
             bce->seqno_in           = info->seqno;
 
 			// update bce->mn_addr with bce->mn_prefix and bce->mn_suffix
-			get_mn_addr(bce);
-			
+            get_mn_addr(bce);
+
             dbg("bce->link %d => %d\n", bce->link, info->iif);
             bce->link               = info->iif;
             dbg("Finished updating the binding cache\n");

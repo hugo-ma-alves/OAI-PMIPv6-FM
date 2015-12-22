@@ -60,7 +60,7 @@ int mag_setup_route(struct in6_addr *pmip6_addr, int downlink)
         dbg("Uplink: Add new rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(pmip6_addr));
         res = rule_add(NULL, RT6_TABLE_PMIP, IP6_RULE_PRIO_PMIP6_FWD, RTN_UNICAST, pmip6_addr, 128, &in6addr_any, 0, 0);
         if (res < 0) {
-            dbg("ERROR Add new rule for tunneling");
+            dbg("ERROR Add new rule for tunneling\n");
         }
     } else {
         dbg("WARNING CANNOT ADD new rule for tunneling src=%x:%x:%x:%x:%x:%x:%x:%x SINCE TUNNELING DISABLED IN CONFIG\n", NIP6ADDR(pmip6_addr));
@@ -69,7 +69,7 @@ int mag_setup_route(struct in6_addr *pmip6_addr, int downlink)
     dbg("Downlink: Add new route for %x:%x:%x:%x:%x:%x:%x:%x in table %d\n", NIP6ADDR(pmip6_addr), RT6_TABLE_MIP6);
     res |= route_add(downlink, RT6_TABLE_MIP6, RTPROT_MIP, 0, IP6_RT_PRIO_MIP6_FWD, &in6addr_any, 0, pmip6_addr, 128, NULL);
     if (res < 0) {
-        dbg("ERROR Add new rule for tunneling");
+        dbg("ERROR Add new rule for tunneling\n");
     }
     return res;
 }
@@ -199,53 +199,53 @@ int mag_force_update_registration(pmip_entry_t * bce, __attribute__ ((unused)) i
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_wrlock(&bce->lock) %s\n", strerror(mutex_return_code));
     }*/
-    if (bce->tqe.task != NULL) {
-        dbg("Deleting current BCE task\n");
-        del_task(&bce->tqe);
-    }
+        if (bce->tqe.task != NULL) {
+            dbg("Deleting current BCE task\n");
+            del_task(&bce->tqe);
+        }
     /*mutex_return_code = pthread_rwlock_unlock(&bce->lock);
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_unlock(&bce->lock) %s\n", strerror(mutex_return_code));
     }*/
 
     //Create PBU and send to the LMA
-    struct in6_addr_bundle addrs;
-    addrs.src = &conf.MagAddressEgress[0];
-    addrs.dst = &conf.LmaAddress;
+        struct in6_addr_bundle addrs;
+        addrs.src = &conf.MagAddressEgress[0];
+        addrs.dst = &conf.LmaAddress;
 
     //struct timespec lifetime = { 3, 0 };
-    mh_send_pbu(&addrs, bce, &conf.PBULifeTime, 0);
+        mh_send_pbu(&addrs, bce, &conf.PBULifeTime, 0);
     //add a new task for PBU retransmission.
-    struct timespec expires;
-    clock_gettime(CLOCK_REALTIME, &bce->add_time);
-    tsadd(bce->add_time, conf.RetransmissionTimeOut, expires);
-    add_task_abs(&expires, &bce->tqe, pmip_timer_retrans_pbu_handler);
-    dbg("PBU Retransmissions Timer is registered....\n");
-    return 0;
-}
+        struct timespec expires;
+        clock_gettime(CLOCK_REALTIME, &bce->add_time);
+        tsadd(bce->add_time, conf.RetransmissionTimeOut, expires);
+        add_task_abs(&expires, &bce->tqe, pmip_timer_retrans_pbu_handler);
+        dbg("PBU Retransmissions Timer is registered....\n");
+        return 0;
+    }
 //---------------------------------------------------------------------------------------------------------------------
-int mag_kickoff_ra(pmip_entry_t * bce)
-{
-    struct in6_addr *src;
-    src = malloc(sizeof(struct in6_addr));
-    memset(src, 0, sizeof(struct in6_addr));
-    struct iovec iov;
-    struct nd_router_advert *radvert;
-    adv_prefix_t prefix;
-    unsigned char buff[MSG_SIZE];
-    size_t len = 0;
-    memset(&buff, 0, sizeof(buff));
-    radvert = (struct nd_router_advert *) buff;
-    radvert->nd_ra_type = ND_ROUTER_ADVERT;
-    radvert->nd_ra_code = 0;
-    radvert->nd_ra_cksum = 0;
-    radvert->nd_ra_curhoplimit = router_ad_iface.AdvCurHopLimit;
-    radvert->nd_ra_flags_reserved = (router_ad_iface.AdvManagedFlag) ? ND_RA_FLAG_MANAGED : 0;
-    radvert->nd_ra_flags_reserved |= (router_ad_iface.AdvOtherConfigFlag) ? ND_RA_FLAG_OTHER : 0;
+    int mag_kickoff_ra(pmip_entry_t * bce)
+    {
+        struct in6_addr *src;
+        src = malloc(sizeof(struct in6_addr));
+        memset(src, 0, sizeof(struct in6_addr));
+        struct iovec iov;
+        struct nd_router_advert *radvert;
+        adv_prefix_t prefix;
+        unsigned char buff[MSG_SIZE];
+        size_t len = 0;
+        memset(&buff, 0, sizeof(buff));
+        radvert = (struct nd_router_advert *) buff;
+        radvert->nd_ra_type = ND_ROUTER_ADVERT;
+        radvert->nd_ra_code = 0;
+        radvert->nd_ra_cksum = 0;
+        radvert->nd_ra_curhoplimit = router_ad_iface.AdvCurHopLimit;
+        radvert->nd_ra_flags_reserved = (router_ad_iface.AdvManagedFlag) ? ND_RA_FLAG_MANAGED : 0;
+        radvert->nd_ra_flags_reserved |= (router_ad_iface.AdvOtherConfigFlag) ? ND_RA_FLAG_OTHER : 0;
     /* Mobile IPv6 ext */
-    radvert->nd_ra_flags_reserved |= (router_ad_iface.AdvHomeAgentFlag) ? ND_RA_FLAG_HOME_AGENT : 0;
+        radvert->nd_ra_flags_reserved |= (router_ad_iface.AdvHomeAgentFlag) ? ND_RA_FLAG_HOME_AGENT : 0;
     /* if forwarding is disabled, send zero router lifetime */
-    radvert->nd_ra_router_lifetime = !check_ip6_forwarding()? htons(router_ad_iface.AdvDefaultLifetime) : 0;
+        radvert->nd_ra_router_lifetime = !check_ip6_forwarding()? htons(router_ad_iface.AdvDefaultLifetime) : 0;
     radvert->nd_ra_reachable = htonl(router_ad_iface.AdvReachableTime); //ask giuliana
     radvert->nd_ra_retransmit = htonl(router_ad_iface.AdvRetransTimer); // ask giuliana
     len = sizeof(struct nd_router_advert);
@@ -253,24 +253,24 @@ int mag_kickoff_ra(pmip_entry_t * bce)
     /*
      *  add prefix options
     */
-    struct nd_opt_prefix_info *pinfo;
-    pinfo = (struct nd_opt_prefix_info *) (buff + len);
-    pinfo->nd_opt_pi_type = ND_OPT_PREFIX_INFORMATION;
-    pinfo->nd_opt_pi_len = 4;
-    pinfo->nd_opt_pi_prefix_len = prefix.PrefixLen;
-    pinfo->nd_opt_pi_flags_reserved = (prefix.AdvOnLinkFlag) ? ND_OPT_PI_FLAG_ONLINK : 0;
-    pinfo->nd_opt_pi_flags_reserved |= (prefix.AdvAutonomousFlag) ? ND_OPT_PI_FLAG_AUTO : 0;
+     struct nd_opt_prefix_info *pinfo;
+     pinfo = (struct nd_opt_prefix_info *) (buff + len);
+     pinfo->nd_opt_pi_type = ND_OPT_PREFIX_INFORMATION;
+     pinfo->nd_opt_pi_len = 4;
+     pinfo->nd_opt_pi_prefix_len = prefix.PrefixLen;
+     pinfo->nd_opt_pi_flags_reserved = (prefix.AdvOnLinkFlag) ? ND_OPT_PI_FLAG_ONLINK : 0;
+     pinfo->nd_opt_pi_flags_reserved |= (prefix.AdvAutonomousFlag) ? ND_OPT_PI_FLAG_AUTO : 0;
     /* Mobile IPv6 ext */
-    pinfo->nd_opt_pi_flags_reserved |= (prefix.AdvRouterAddr) ? ND_OPT_PI_FLAG_RADDR : 0;
-    pinfo->nd_opt_pi_valid_time = htonl(prefix.AdvValidLifetime);
-    pinfo->nd_opt_pi_preferred_time = htonl(prefix.AdvPreferredLifetime);
-    pinfo->nd_opt_pi_reserved2 = 0;
-    memcpy(&pinfo->nd_opt_pi_prefix, &bce->mn_prefix, sizeof(struct in6_addr));
-    len += sizeof(*pinfo);
+     pinfo->nd_opt_pi_flags_reserved |= (prefix.AdvRouterAddr) ? ND_OPT_PI_FLAG_RADDR : 0;
+     pinfo->nd_opt_pi_valid_time = htonl(prefix.AdvValidLifetime);
+     pinfo->nd_opt_pi_preferred_time = htonl(prefix.AdvPreferredLifetime);
+     pinfo->nd_opt_pi_reserved2 = 0;
+     memcpy(&pinfo->nd_opt_pi_prefix, &bce->mn_prefix, sizeof(struct in6_addr));
+     len += sizeof(*pinfo);
     //mobile ip extension
-    if (router_ad_iface.AdvHomeAgentInfo
-    && (router_ad_iface.AdvMobRtrSupportFlag || router_ad_iface.HomeAgentPreference != 0 || router_ad_iface.HomeAgentLifetime != router_ad_iface.AdvDefaultLifetime)) {
-    home_agent_info_t ha_info;
+     if (router_ad_iface.AdvHomeAgentInfo
+        && (router_ad_iface.AdvMobRtrSupportFlag || router_ad_iface.HomeAgentPreference != 0 || router_ad_iface.HomeAgentLifetime != router_ad_iface.AdvDefaultLifetime)) {
+        home_agent_info_t ha_info;
     ha_info.type = ND_OPT_HOME_AGENT_INFO;
     ha_info.length = 1;
     ha_info.flags_reserved = (router_ad_iface.AdvMobRtrSupportFlag) ? ND_OPT_HAI_FLAG_SUPPORT_MR : 0;
@@ -278,17 +278,17 @@ int mag_kickoff_ra(pmip_entry_t * bce)
     ha_info.lifetime = htons(router_ad_iface.HomeAgentLifetime);
     memcpy(buff + len, &ha_info, sizeof(ha_info));
     len += sizeof(ha_info);
-    }
-    iov.iov_len = len;
-    iov.iov_base = (caddr_t) buff;
-    int err;
-    err = icmp6_send(bce->link, 255, src, &bce->mn_link_local_addr, &iov, 1);
-    if (err < 0) {
-        dbg("Error: couldn't send a RA message ...\n");
-    } else {
-        dbg("RA LL ADDRESS sent on bce link %d\n", bce->link);
-    }
-    return err;
+}
+iov.iov_len = len;
+iov.iov_base = (caddr_t) buff;
+int err;
+err = icmp6_send(bce->link, 255, src, &bce->mn_link_local_addr, &iov, 1);
+if (err < 0) {
+    dbg("Error: couldn't send a RA message ...\n");
+} else {
+    dbg("RA LL ADDRESS sent on bce link %d\n", bce->link);
+}
+return err;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int check_ip6_forwarding(void)
@@ -304,20 +304,20 @@ int check_ip6_forwarding(void)
         rc = fscanf(fp, "%d", &value);
         fclose(fp);
         if (rc <= 0) {
-             dbg("ERROR reading %s" ,PROC_SYS_IP6_FORWARDING);
-        }
-    } else
-        dbg("Correct IPv6 forwarding procfs entry not found, " "perhaps the procfs is disabled, " "or the kernel interface has changed?");
+           dbg("ERROR reading %s" ,PROC_SYS_IP6_FORWARDING);
+       }
+   } else
+   dbg("Correct IPv6 forwarding procfs entry not found, " "perhaps the procfs is disabled, " "or the kernel interface has changed?");
 #endif              /* __linux__ */
-    if (!fp && sysctl(forw_sysctl, sizeof(forw_sysctl) / sizeof(forw_sysctl[0]), &value, &size, NULL, 0) < 0) {
-        dbg("Correct IPv6 forwarding sysctl branch not found, " "perhaps the kernel interface has changed?");
+   if (!fp && sysctl(forw_sysctl, sizeof(forw_sysctl) / sizeof(forw_sysctl[0]), &value, &size, NULL, 0) < 0) {
+    dbg("Correct IPv6 forwarding sysctl branch not found, " "perhaps the kernel interface has changed?");
         return (0);     /* this is of advisory value only */
-    }
-    if (value != 1) {
-        dbg("IPv6 forwarding setting is: %u, should be 1", value);
-        return (-1);
-    }
-    return (0);
+}
+if (value != 1) {
+    dbg("IPv6 forwarding setting is: %u, should be 1", value);
+    return (-1);
+}
+return (0);
 }
 //---------------------------------------------------------------------------------------------------------------------
 int mag_get_ingress_info(int *if_index, char *dev_name_mn_link)
@@ -435,21 +435,21 @@ int setup_linklocal_addr(struct in6_addr *src)
         dbg("entered the if to get %s iface ll address ", dev_name_mn_link);
         flagy = 1;
         for (i = 0; i < 16; i++) {
-        sscanf(str_addr + i * 2, "%02x", &ap);
-        addr.s6_addr[i] = (unsigned char) ap;
+            sscanf(str_addr + i * 2, "%02x", &ap);
+            addr.s6_addr[i] = (unsigned char) ap;
         }
         dbg("PMIP cache entry is found for: %x:%x:%x:%x:%x:%x:%x:%x \n", NIP6ADDR(&addr));
         *src = addr;
     }
-    }
-    if (flagy == 0) {
-        dbg("no link local address configured ");
-        fclose(fp);
-        return -1;
-    } else {
-        fclose(fp);
-        return 1;
-    }
+}
+if (flagy == 0) {
+    dbg("no link local address configured ");
+    fclose(fp);
+    return -1;
+} else {
+    fclose(fp);
+    return 1;
+}
 }
 //---------------------------------------------------------------------------------------------------------------------
 int mag_update_binding_entry(pmip_entry_t * bce, msg_info_t * info)
@@ -483,11 +483,19 @@ int mag_pmip_md(msg_info_t * info, pmip_entry_t * bce)
         struct in6_addr *link_local = link_local_addr(&bce->mn_suffix);
         bce->mn_link_local_addr = *link_local;  // link local address of MN
         bce->type               = BCE_TEMP;
+
+        int naiSize = sizeof(ip6mn_nai_t);
+        char nai[naiSize+1];
+        nai[naiSize]='\0';
+        memcpy(&nai,&bce->mn_nai,naiSize);
+    
+
         dbg("Making BCE entry in MAG with HN prefix        %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_prefix));
         dbg("                             Suffix           %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_suffix));
         dbg("                             Link local addr  %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_link_local_addr));
         dbg("                             Serv mag addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_mag_addr));
         dbg("                             Serv lma addr    %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&bce->mn_serv_lma_addr));
+        dbg("                             NAI               %s\n"                         , nai);
         dbg("New attachment detected! Start Location Registration procedure...\n");
         mag_start_registration(bce);
     }

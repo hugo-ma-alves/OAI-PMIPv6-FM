@@ -165,6 +165,7 @@ static inline int in6_is_addr_routable_unicast(const struct in6_addr *a)
 		 !IN6_IS_ADDR_LINKLOCAL(a)));
 }
 
+
 #define NIP6ADDR(addr) \
         ntohs((addr)->s6_addr16[0]), \
         ntohs((addr)->s6_addr16[1]), \

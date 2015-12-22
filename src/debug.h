@@ -10,6 +10,7 @@
 #define dbg(...)
 #define cdbg(...)
 #define dbg_buf(...)
+#define dbg_buf_string(...)
 #define dbg_func(arg, func)
 #define BUG(x)
 #define pthread_dbg(x)
@@ -22,6 +23,9 @@ static inline void debug_init(void){}
 #define cdbg(...) dbgprint(NULL, __VA_ARGS__)
 #define dbg_buf(data, len, ...) \
 	debug_print_buffer(data, len, __FUNCTION__, __VA_ARGS__)
+#define dbg_buf_string(data,len) \
+	debug_print_buffer_as_string(data, len, __FUNCTION__ )
+
 #define dbg_func(arg, func) debug_print_func(arg, func)
 
 #define BUG(x) dbgprint("BUG", "%s %d %s\n", __FUNCTION__, __LINE__, x)
@@ -36,6 +40,8 @@ void debug_print_func(void *arg, void (*func)(void *arg, void *stream));
 int debug_open(const char *path);
 void debug_close(void);
 void debug_init(void);
+void debug_print_buffer_as_string(const void *data, int len, const char *fname);	
+
 
 #ifndef DEBUG_LOCKING
 

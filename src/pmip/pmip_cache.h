@@ -57,7 +57,7 @@
 //-----------------------------------------------------------------------------
 #    include "tqueue.h"
 #    include "util.h"
-#    include "hash.h"
+#    include "pmip_hash.h"
 //-----------------------------------------------------------------------------
 #    include "pmip_types.h"
 
@@ -149,6 +149,8 @@ typedef struct ra_iface_t {
 * \brief Data structure "binding cache entry", to store all binding informations relative to a mobile node.
 */
 typedef struct pmip_entry_t {
+	int     				BID;
+	ip6mn_nai_t 			mn_nai;
 	struct in6_addr			mn_prefix;			/*!< \brief Network Address Prefix for MN */
 	struct in6_addr			our_addr;			/*!< \brief Address to which we got BU */
 	struct in6_addr			mn_suffix;			/*!< \brief MN IID */
@@ -255,12 +257,12 @@ protected_pmip_cache(int pmip_cache_start(pmip_entry_t * bce);)
 protected_pmip_cache(pmip_entry_t * pmip_cache_add(pmip_entry_t * bce);)
 /*! \fn pmip_entry_t * pmip_cache_get(const struct in6_addr *our_addr, const struct in6_addr *peer_addr)
 * \brief Add an entry in the binding cache.
-* \param[in]  our_addr  the IPv6 fixed address of the PMIP entity
-* \param[in]  peer_addr peer hardware address (link-layer address)
+* \param[in]  mn_nai  the MN NAI identifier
+* \param[in]  mag_addr The MAC address of the MAG (link-layer address)
 * \return   The corresponding cache entry, else NULL.
 * \note 	If a binding cache entry is returned, its mutex is write locked, pmip mutex "pmip_lock" is also read-write locked.
 */
-protected_pmip_cache(pmip_entry_t * pmip_cache_get(const struct in6_addr *our_addr, const struct in6_addr *peer_addr);)
+protected_pmip_cache(pmip_entry_t * pmip_cache_get(const  ip6mn_nai_t *mn_nai, const struct in6_addr *mag_addr);)
 /*! \fn void pmipcache_release_entry(pmip_entry_t *bce)
 * \brief Unlocks a binding cache entry.
 * \param[in]  bce  a binding cache entry
@@ -269,12 +271,12 @@ protected_pmip_cache(pmip_entry_t * pmip_cache_get(const struct in6_addr *our_ad
 protected_pmip_cache(void pmipcache_release_entry(pmip_entry_t * bce);)
 /*! \fn int pmip_cache_exists(const struct in6_addr*, const struct in6_addr*)
 * \brief Check the existence of a binding cache entry for a tuple of addresses in the binding cache.
-* \param[in]  our_addr  the IPv6 fixed address of the PMIP entity
-* \param[in]  peer_addr peer hardware address (link-layer address)
+* \param[in]  mn_nai  the MN NAI identifier
+* \param[in]  mag_addr The MAC address of the MAG (link-layer address)
 * \return   The type of the binding cache entry if found, -1 if entry not found.
 * \note 	If a binding cache entry is found, its mutex is unlocked.
 */
-protected_pmip_cache(int pmip_cache_exists(const struct in6_addr *our_addr, const struct in6_addr *peer_addr);)
+protected_pmip_cache(int pmip_cache_exists(const  ip6mn_nai_t *mn_nai, const struct in6_addr *mag_addr);)
 /*! \fn void pmipcache_free(pmip_entry_t *bce)
 * \brief Free the allocated memory of a binding cache entry.
 * \param[in]  bce  a binding cache entry
@@ -287,10 +289,10 @@ private_pmip_cache(void pmipcache_free(pmip_entry_t * bce);)
 protected_pmip_cache(void pmip_bce_delete(pmip_entry_t * bce);)
 /*! \fn void pmip_cache_delete(const struct in6_addr*, const struct in6_addr*)
 * \brief Search a binding cache entry in the binding cache corresponding to a tupple of addresses and remove this binding cache entry from the binding cache and free it.
-* \param[in]  our_addr  the IPv6 fixed address of the PMIP entity
-* \param[in]  peer_addr peer hardware address (link-layer address)
+* \param[in]  mn_nai  the MN NAI identifier
+* \param[in]  mag_addr The MAC address of the MAG (link-layer address)
 */
-protected_pmip_cache(void pmip_cache_delete(const struct in6_addr *our_addr, const struct in6_addr *peer_addr);)
+protected_pmip_cache(void pmip_cache_delete(const  ip6mn_nai_t *mn_nai, const struct in6_addr *mag_addr);)
 /*! \fn int pmip_cache_iterate(int (*func) (void *, void *), void *arg)
 * \brief Apply function to every BC entry. Iterates through proxy binding cache, calling \a func for each entry. Extra data may be passed to \a func in \a arg.\a func takes a bcentry as its first argument and \a arg as second argument.
 * \param[in]  func  the int (*func) (void *, void *) function pointer to apply to every binding cache entry.

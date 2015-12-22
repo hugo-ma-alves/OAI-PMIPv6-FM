@@ -503,7 +503,18 @@ void conf_show(struct mip6_config *c)
 				NIP6ADDR(&c->MagAddressIngress[i]));
 			dbg("- MagAddressEgress = %x:%x:%x:%x:%x:%x:%x:%x\n",
 				NIP6ADDR(&c->MagAddressEgress[i]));
+			dbg("Mark for flow routing: %d\n",c->MagRoutingMark[i]);
+			dbg("Number of Routing table: %d\n",c->MAGRoutingLookupTable[i]);
+
 		}
+
+
+#ifdef ENABLE_FLOW_MOBILITY
+		dbg("Printing Flow mob configurations\n");
+		dbg("Netfilter usespace queue number: %d\n", c->UserSpacePacketsQueue);
+
+#endif
+		
 		break;
 
 		case MIP6_ENTITY_MAG:

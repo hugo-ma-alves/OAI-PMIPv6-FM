@@ -59,8 +59,14 @@
 #endif
 
 #ifdef ENABLE_FLOW_MOBILITY
+<<<<<<< HEAD
 #   include "fmpmip/flowmob_hash_struct.h"
 #   include "fmpmip/fmpmip_packet_marker.h"
+=======
+#   include "fmpmip/fmpmip_flowmob_cache.h"
+#   include "fmpmip/fmpmip_packets_userspace_queue_handler.h"
+#   include "fmpmip/fmpmip_client_route.h"
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 #endif
 
 #define IPV6_ALL_SOLICITED_MCAST_ADDR 68
@@ -143,6 +149,7 @@ int pmip_common_init(void)
     if (probe_fd < 0)
     {
         perror("socket");
+        dbg("Error probing for local socket\n");
         exit(2);
     }
     unsigned int alen;
@@ -226,15 +233,17 @@ int pmip_mag_init(void)
         exit(-1);
     }
 
+    dbg("Initialization of FSM Successfull\n");
     init_pbu_sequence_number();
 
     init_iface_ra();
     init_mag_icmp_sock();
 
-#ifndef USE_ODTONE
     dbg("Initializing the NA handler\n");
     // to capture NA message
     icmp6_handler_reg(ND_NEIGHBOR_ADVERT, &pmip_mag_recv_na_handler);
+
+#ifndef USE_ODTONE
     dbg("Initializing the RS handler\n");
     // to capture RS message
     icmp6_handler_reg(ND_ROUTER_SOLICIT, &pmip_mag_rs_handler);
@@ -250,6 +259,7 @@ int pmip_mag_init(void)
     dbg("Initializing the HNP cache\n");
     if (pmip_mn_to_hnp_cache_init() < 0)
     {
+        dbg("Failed to Initializing the HNP cache.... exiting now\n");
         exit (-1);
     }
 
@@ -262,12 +272,15 @@ int pmip_mag_init(void)
     dbg("Starting capturing AP messages for incoming MNs detection\n");
     pmip_pcap_loop_start();
 #endif
+
+    dbg("pmip_common_init success exiting...\n");
     return 0;
 }
 //---------------------------------------------------------------------------------------------------------------------
 int pmip_lma_init(void)
 //---------------------------------------------------------------------------------------------------------------------
-{
+{   
+    client_route_init();
     if (pmip_common_init() < 0) return -1;
 
     /**
@@ -286,9 +299,13 @@ int pmip_lma_init(void)
     pmip_lma_mn_to_hnp_cache_init();
     conf.OurAddress = conf.LmaAddress;
     dbg("Entity Address: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(&conf.OurAddress));
-    dbg("Initializing the PBU handler\n");
+    //dbg("Initializing the PBU handler\n");
     //To capture PBU message.
+<<<<<<< HEAD
     //mh_handler_reg(IP6_MH_TYPE_BU, &pmip_lma_pbu_handler);
+=======
+   // mh_handler_reg(IP6_MH_TYPE_BU, &pmip_lma_pbu_handler);
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 
 #ifdef ENABLE_FLOW_MOBILITY
     int ret=0;
@@ -306,6 +323,12 @@ int pmip_lma_init(void)
         return -1;
     }
 
+<<<<<<< HEAD
 #endif
     return 0;
+=======
+
+#endif
+return 0;
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 }

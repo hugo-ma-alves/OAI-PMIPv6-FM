@@ -99,6 +99,24 @@ void debug_print_buffer(const void *data, int len, const char *fname,
 	fflush(sdbg);
 }
 
+
+void debug_print_buffer_as_string(const void *data, int len, const char *fname)
+{ 
+	int i; 
+	char s[1024];
+        va_list args;
+        fprintf(sdbg, "%s: %s", fname, s);
+        va_end(args);
+	
+	for (i = 0; i < len; i++) { 
+		fprintf(sdbg, "%c ", ((char *)data)[i]);
+	} 
+
+	fprintf(sdbg, "\n");
+	fflush(sdbg);
+}
+
+
 void debug_print_func(void *arg, void (*func)(void *arg, void *stream))
 {
 	func(arg, sdbg);

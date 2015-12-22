@@ -5,7 +5,7 @@ NodeConfig HA;
 DebugLevel 10;
 
 ## List of interfaces where we serve as Home Agent
-Interface "eth1";
+Interface "eth0";
 #Interface "eth0";
 
 ##
@@ -37,7 +37,7 @@ UseMnHaIPsec                    disabled;
 KeyMngMobCapability             disabled;
 
 ProxyMipLma "LMA testbed n1" {
-    RFC5213TimestampBasedApproachInUse                   enabled;
+   RFC5213TimestampBasedApproachInUse                   enabled;
     RFC5213MobileNodeGeneratedTimestampInUse             disabled;
     RFC5213FixedMAGLinkLocalAddressOnAllAccessLinks      fe80::211:22ff:fe33:4455;
     RFC5213FixedMAGLinkLayerAddressOnAllAccessLinks      00:11:22:33:44:55;
@@ -51,9 +51,9 @@ ProxyMipLma "LMA testbed n1" {
 ## Value in milliseconds
     RFC5213TimestampValidityWindow                       300;
 
-    LmaPmipNetworkAddress                                2001:100::1;
+    LmaPmipNetworkAddress                                2001:aaaa:bbbb:cccc::1;
     LmaPmipNetworkDevice                                 "eth0";
-    LmaCoreNetworkAddress                                2001:2::1;
+    LmaCoreNetworkAddress                                2001:AAAA:BBBB:DDDD::1;
     LmaCoreNetworkDevice                                 "eth1";
 ## Value in milliseconds
     RetransmissionTimeOut                                500;
@@ -64,19 +64,21 @@ ProxyMipLma "LMA testbed n1" {
     MaxDelayBeforeDynamicTunnelingDelete                 60000;
 
 ## MAG 1 (warning line defining MagAddressIngress must be before line defining MagAddressEgress)
-    MagAddressIngress                                    2001:1::1;
-    MagAddressEgress                                     2001:100::2;
+    MagAddressIngress                                    2001:AAAA:BBBB:AAAA::1;
+    MagAddressEgress                                     2001:AAAA:BBBB:CCCC::2;
 
 ## MAG 2 (warning line defining MagAddressIngress must be before line defining MagAddressEgress)
-    MagAddressIngress                                    2001:1::2;
-    MagAddressEgress                                     2001:100::3;
+##    MagAddressIngress                                    2001:1::2;
+##    MagAddressEgress                                     2001:100::3;
 
 ## MAG 3 (warning line defining MagAddressIngress must be before line defining MagAddressEgress)
-## MAG address must end this the last records containing 0::0 addresses
+## MAG address must end this the last records containing 0::0 addresses !!!
 
     MagAddressIngress                                    0::0;
     MagAddressEgress                                     0::0;
 
     # MAG ... up to PMIP_MAX_MAGS = 64
+
+	UserSpacePacketQueueID					0;
 
 }

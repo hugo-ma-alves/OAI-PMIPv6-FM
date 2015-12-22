@@ -95,6 +95,17 @@ private_pmip_msgs(struct in6_addr get_node_id(struct in6_addr *mn_addr);)
 * \note The prefix len is 64 bits
 */
 protected_pmip_msgs(struct in6_addr get_node_prefix(struct in6_addr *mn_addr);)
+
+/*! \fn int mh_create_opt_mobile_node_identifier(struct iovec *iov, int subtype, ip6mn_nai_t * MN_ID)
+* \brief Creates the Mobile node indetifier option.
+* \param[in,out]  iov Storage
+* \param[in]  subtype Type of the identifier(NAI)
+* \param[in]  ip6mn_nai_t Option The mobile node identifier
+* \return   Zero if success, negative value otherwise.
+*/
+private_pmip_msgs(int mh_create_opt_mobile_node_identifier(struct iovec *iov, int subtype, ip6mn_nai_t * MN_ID);)
+
+
 /*! \fn int mh_create_opt_home_net_prefix(struct iovec *, struct in6_addr *)
 * \brief Creates the Home Network Prefix option.
 * \param[in,out]  iov Storage

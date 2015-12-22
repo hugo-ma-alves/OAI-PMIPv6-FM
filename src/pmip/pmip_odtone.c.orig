@@ -24,11 +24,17 @@
 #include <arpa/inet.h>
 
 #include "pmip_mag_proc.h"
+<<<<<<< HEAD
+
+static void msg_handler_associate(unsigned char * mn_iidP);
+static void msg_handler_deassociate(unsigned char * mn_iidP);
+=======
 #include "pmip_hnp_cache.h"
 
 static void msg_handler_associate(unsigned char * mn_iidP);
 static void msg_handler_deassociate(unsigned char * mn_iidP);
 static ip6mn_nai_t get_node_nai(struct in6_addr mn_iid );
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
 
 static pthread_t socket_listener;
 int  sock;
@@ -126,7 +132,11 @@ int check_if_cap_discovery_matches_conffile_listenInterface(char *str, int index
     {
         index+=9; //advance to first/next link address
         //mac[0]=str[index];
+<<<<<<< HEAD
         dbg("Found Link sap number %d:\n",numberOfElemets);
+=======
+        //dbg("Found Link sap number %d:\n",numberOfElemets);
+>>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
         memcpy(mac, &str[index],6);
 
         //debug_print_buffer(mac ,6, "decodeLinkList"," Received Link:");

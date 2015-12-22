@@ -35,6 +35,7 @@
 #include "pmip_handler.h"
 //---------------------------------------------------------------------------------------------------------------------
 #include "tunnelctl.h"
+#include "rtnl.h"
 #include "util.h"
 #ifdef ENABLE_VT
 #    include "vt.h"
@@ -60,6 +61,8 @@ int pmip_tunnels_init(void)
 {
     unsigned int mag;
     unsigned int link;
+    int tunnel_index;
+    
 
     memset((void*)g_tunnel_timer_table, 0, sizeof(tunnel_timer_t) * PMIP_MAX_MAGS);
     for (mag = 0 ; mag < PMIP_MAX_MAGS; mag++) {
@@ -72,7 +75,8 @@ int pmip_tunnels_init(void)
             if (is_ha()) {
                 for (mag = 0 ; mag < conf.NumMags; mag++) {
                     link = if_nametoindex(conf.LmaPmipNetworkDevice);
-                    pmip_tunnel_add(&conf.LmaAddress, &conf.MagAddressEgress[mag], link);
+                    tunnel_index = pmip_tunnel_add(&conf.LmaAddress, &conf.MagAddressEgress[mag], link);
+                    fmpmip_lma_to_mag_routing_tables_init(tunnel_index, conf.MAGRoutingLookupTable[mag]);
                 }
             } else if (is_mag()) {
                 link = if_nametoindex(conf.MagDeviceEgress);
@@ -80,10 +84,29 @@ int pmip_tunnels_init(void)
             }
         } else {
             dbg("DynamicTunnelingEnabled is True\n");
-		}
+        }
     }
     return 0;
 }
+//---------------------------------------------------------------------------------------------------------------------
+
+int fmpmip_lma_to_mag_routing_tables_init( int tunnel_index, uint8_t table_number){
+
+    char buf[IF_NAMESIZE + 1];
+    char *tunnel_if_name;
+    int ret=0;
+
+    tunnel_if_name = if_indextoname(tunnel_index, buf);
+    dbg("Adding default Route to Routing table number %d through tunnel interface %s\n", table_number, tunnel_if_name);
+    ret = route_del(tunnel_index, table_number,IP6_RT_PRIO_MIP6_OUT, &in6addr_any, 0, &in6addr_any, 0, NULL);
+
+    ret = route_add(tunnel_index, table_number, RTPROT_STATIC, 0, IP6_RULE_PRIO_FMPMIP6_MAG_ROUTE_TABLE, &in6addr_any, 0, &in6addr_any, 0, NULL);
+    dbg(" %x:%x:%x:%x:%x:%x:%x:%x \n", NIP6ADDR(&in6addr_any));
+    dbg("exit status %d\n", ret);
+    return ret;
+}
+
+
 //---------------------------------------------------------------------------------------------------------------------
 int pmip_tunnel_set_timer(struct in6_addr  *remoteP, int tunnelP, struct timespec time_outP)
 {

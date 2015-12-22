@@ -105,5 +105,11 @@ protected_pmip_tunnel(int pmip_tunnel_add(struct in6_addr *local, struct in6_add
 * \return   Returns negative if tunnel does not exist, otherwise zero.
 */
 protected_pmip_tunnel(int pmip_tunnel_del(int tunnelP);)
+
+
+protected_pmip_tunnel(int fmpmip_lma_to_mag_routing_tables_init( int tunnel_index, uint8_t table_number);)
+
+
+
 #endif
 /** @}*/

@@ -320,6 +320,8 @@ LmaPmipNetworkDevice		{ return LMAPMIPNETWORKDEVICE; }
 LmaCoreNetworkAddress		{ return LMACORENETWORKADDRESS; }
 LmaCoreNetworkDevice		{ return LMACORENETWORKDEVICE; }
 MagAddressIngress		{ return MAGADDRESSINGRESS; }
+MagRoutingPacketsMark		{ return MAGROUTINGPACKETSMARK; }
+MAGRoutingLookupTable		{ return MAGROUTINGLOOKUPTABLE; }
 MagAddressEgress		{ return MAGADDRESSEGRESS; }
 MagDeviceIngress		{ return MAGDEVICEINGRESS; }
 MagDeviceEgress			{ return MAGDEVICEEGRESS; }
@@ -399,7 +401,6 @@ UserSpacePacketQueueID			{return USERSPACEPACKETQUEUEID; }
                         hex_digits[1] = yytext[16];
                         sscanf(hex_digits, "%02x", &i); 
                         yylval.macaddr.s6_addr[15] = i & 0x000000FF; 
-                        printf("scan.l: %02x:%02x:%02x:%02x:%02x:%02x\n", yylval.macaddr.s6_addr[10], yylval.macaddr.s6_addr[11],yylval.macaddr.s6_addr[12],yylval.macaddr.s6_addr[13],yylval.macaddr.s6_addr[14],yylval.macaddr.s6_addr[15]);
 			return MACADDR;
 		}
 

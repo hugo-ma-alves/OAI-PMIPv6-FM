@@ -147,7 +147,7 @@ void pmip_timer_bce_expired_handler(struct tq_elem *tqe)
     if (mutex_return_code != 0) {
         dbg("pthread_rwlock_wrlock(&pmip_lock) %s\n", strerror(mutex_return_code));
     }
-    printf("-------------------------------------\n");
+    dbg("-------------------------------------\n");
     if (!task_interrupted()) {
         pmip_entry_t *e = tq_data(tqe, pmip_entry_t, tqe);
         mutex_return_code = pthread_rwlock_wrlock(&e->lock);
@@ -281,8 +281,8 @@ static inline int ipv6_addr_is_linklocal(const struct in6_addr *addr)
 static void pmip_mag_recv_rs(const struct icmp6_hdr *ih, __attribute__ ((unused)) ssize_t len, const struct in6_addr *saddr, const struct in6_addr *daddr, int iif, int hoplimit)
 {
     dbg("\n");
+    dbg("=====================================\n");
     dbg("Router Solicitation received \n");
-    printf("-------------------------------------\n");
     dbg("Router Solicitation (RS) Received iif %d\n", iif);
     dbg("Received RS Src Addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(saddr));
     dbg("Received RS Dst addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(daddr));
@@ -297,7 +297,7 @@ static void pmip_mag_recv_rs(const struct icmp6_hdr *ih, __attribute__ ((unused)
  */
 static void pmip_mag_recv_pba(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
 {
-    printf("=====================================\n");
+    dbg("=====================================\n");
     dbg("Proxy Binding Acknowledgement (PBA) Received\n");
     dbg("Received PBA Src Addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(in_addrs->src));
     dbg("Received PBA Dst addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(in_addrs->dst));
@@ -317,7 +317,7 @@ static void pmip_mag_recv_pba(const struct ip6_mh *mh, ssize_t len, const struct
  */
 void pmip_lma_recv_pbu(const struct ip6_mh *mh, ssize_t len, const struct in6_addr_bundle *in_addrs, int iif)
 {
-    printf("=====================================\n");
+    dbg("=====================================\n");
     dbg("Proxy Binding Update (PBU) Received\n");
     dbg("Received PBU Src Addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(in_addrs->src));
     dbg("Received PBU Dst addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(in_addrs->dst));
@@ -348,7 +348,7 @@ static void pmip_mag_recv_na(const struct icmp6_hdr *ih, ssize_t len, const stru
         return;
     }
     if (len - sizeof(struct nd_neighbor_advert) > 0) {
-        printf("-------------------------------------\n");
+        dbg("=====================================\n");
         dbg("Neighbor Advertisement (NA) Received\n");
         dbg("Received NA Src Addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(saddr));
         dbg("Received NA Dst addr: %x:%x:%x:%x:%x:%x:%x:%x\n", NIP6ADDR(daddr));

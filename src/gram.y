@@ -231,6 +231,8 @@ static void uerror(const char *fmt, ...) {
 %token		LMACORENETWORKDEVICE
 %token		MAGADDRESSINGRESS
 %token		MAGADDRESSEGRESS
+%token 		MAGROUTINGPACKETSMARK
+%token		MAGROUTINGLOOKUPTABLE
 %token		MAGDEVICEINGRESS
 %token		MAGDEVICEEGRESS
 %token		OURADDRESS
@@ -1036,6 +1038,14 @@ proxymiplmaopt	: LMAPMIPNETWORKADDRESS ADDR ';'
 		| MAGADDRESSINGRESS ADDR ';'
 		{
 			memcpy(&conf_parsed->MagAddressIngress[conf_parsed->NumMags], &$2, sizeof(struct in6_addr));
+		}
+		| MAGROUTINGPACKETSMARK NUMBER ';'
+		{
+			conf.MagRoutingMark[conf_parsed->NumMags] = $2;
+		}
+		| MAGROUTINGLOOKUPTABLE NUMBER ';'
+		{
+			conf.MAGRoutingLookupTable[conf_parsed->NumMags] = $2;
 		}
 		| MAGADDRESSEGRESS ADDR ';'
 		{
