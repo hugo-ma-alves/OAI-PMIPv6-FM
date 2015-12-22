@@ -126,7 +126,7 @@ int check_if_cap_discovery_matches_conffile_listenInterface(char *str, int index
     {
         index+=9; //advance to first/next link address
         //mac[0]=str[index];
-        dbg("Found Link sap number %d:\n",numberOfElemets);
+        //dbg("Found Link sap number %d:\n",numberOfElemets);
         memcpy(mac, &str[index],6);
 
         //debug_print_buffer(mac ,6, "decodeLinkList"," Received Link:");

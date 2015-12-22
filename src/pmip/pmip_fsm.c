@@ -341,10 +341,7 @@ int mag_fsm(msg_info_t * info)
               dbg("Deregistration for not registered MAG, doing nothing\n");
                 //lma_dereg(bce, info, 0);
                 pmipcache_release_entry(bce);  // Release lock
-<<<<<<< HEAD
-=======
               }
->>>>>>> origin/implementation-draft-ietf-netext-pmipv6-flowmob-08
             }
         // update bce->mn_addr attribute for vt display
             get_mn_addr(bce);
