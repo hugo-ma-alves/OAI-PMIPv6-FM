@@ -189,6 +189,18 @@ AC_CACHE_CHECK([whether to Enable flow mobility extensions],
 			   [ac_cv_pmip_enable_flow_mobility], [ac_cv_pmip_enable_flow_mobility=no])
 AM_CONDITIONAL(ENABLE_FLOW_MOBILITY, test x$ac_cv_pmip_enable_flow_mobility = xyes)
 
+dnl Option --with-nftables
+AC_ARG_WITH(nftables,
+			AC_HELP_STRING([--with-nftables],[Use Nftables instead of iptables]),
+			[ac_cv_pmip_with_nftables=yes], [ac_cv_pmip_with_nftables=no])
+
+if test x$ac_cv_pmip_with_nftables = xyes; then
+        AC_DEFINE([USE_NFTABLES], [1], [USE NFTABLES ])
+fi
+AC_CACHE_CHECK([whether to use NFTABLES or IPtables],
+			   [ac_cv_pmip_with_nftables], [ac_cv_pmip_with_nftables=no])
+AM_CONDITIONAL(USE_NFTABLES, test x$ac_cv_pmip_with_nftables = xyes)
+
 
 dnl Option --disable-debug
 AC_ARG_ENABLE(debug,
@@ -292,13 +304,14 @@ AC_MSG_NOTICE([settings
 
 AC_PACKAGE_NAME version AC_PACKAGE_VERSION
 
-  Use built-in crypto: ............ $ac_cv_use_builtin_crypto
-  Use OpenSSL crypto library: ..... $ac_cv_lib_crypto_HMAC_Init
-  Use RADIUS client library: ...... $ac_cv_pmip_use_radius
-  Enable debugging mode: .......... $ac_cv_enable_debug
-  Enable virtual debug terminal: .. $ac_cv_enable_vt
-  Use ODTONE 802_21 to detect clients: .. $ac_cv_pmip_with_odtone
-  Enable FLow Mobility extensions		..$ac_cv_pmip_enable_flow_mobility
+  Use built-in crypto: .................... $ac_cv_use_builtin_crypto
+  Use OpenSSL crypto library: ............. $ac_cv_lib_crypto_HMAC_Init
+  Use RADIUS client library: .............. $ac_cv_pmip_use_radius
+  Enable debugging mode: .................. $ac_cv_enable_debug
+  Enable virtual debug terminal: .. ....... $ac_cv_enable_vt
+  Use ODTONE 802_21 to detect clients:....  $ac_cv_pmip_with_odtone
+  Enable FLow Mobility extensions.......... $ac_cv_pmip_enable_flow_mobility
+  Use NFTABLES............................. $ac_cv_pmip_with_nftables
   Build target: $host
   CPPFLAGS: $CPPFLAGS
 ])
